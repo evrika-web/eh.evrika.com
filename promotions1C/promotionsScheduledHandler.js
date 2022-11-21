@@ -12,9 +12,15 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 router.get('/promotions', (req, res) => {
-    console.log('Request for promotions JSON')
-    log.info('Request for promotions JSON')
-    res.json(getPromotions())
+    try{
+      // console.log('Request for promotions JSON')
+      const promotions1C = getPromotionsfrom1C();
+      console.log(promotions1C);
+      res.json(promotions1C)
+    }  catch (err) {
+      console.log(err);
+      res.status(404).send({ error: err.toString() });
+  }
 })
 
 const url1CPromotions = process.env.URL_1C_PROMOTIONS; 
@@ -31,9 +37,10 @@ let config1CPromotions ={
       }
 }
 
-function getPromotions(){
+function getPromotionsfrom1C(){
     axios.post(url1CPromotions,data1CPromotions,config1CPromotions )
   .then(function (response) {    
+    // log.info(`Response: ${JSON.stringify(response.data.Акции)}`)
     console.log(response.data.Акции);
     return response.data;
   })
