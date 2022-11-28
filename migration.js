@@ -2,6 +2,7 @@ var mysql = require('mysql');
 var migration = require('mysql-migrations');
 require('dotenv').config();
 
+//db connection
 var connection = mysql.createPool({
   connectionLimit : 10,
   host     : process.env.DB_HOST,
@@ -11,6 +12,7 @@ var connection = mysql.createPool({
   database : process.env.DB_NAME
 });
 
+//initialization of migrations
 migration.init(connection, __dirname + '/database/migrations', function() {
   console.log("finished running migrations");
 });

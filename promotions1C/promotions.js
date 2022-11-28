@@ -4,6 +4,7 @@ const axios = require("axios");
 const moment = require("moment");
 require("dotenv").config();
 const { addPromotion } = require("../database/dbQuerie");
+
 const SimpleNodeLogger = require("simple-node-logger");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-client.log`,
@@ -11,6 +12,7 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
+// router: get promotions from 1C
 router.get("/promotions", async (req, res) => {
   try {
     // console.log('Request for promotions JSON')
@@ -40,6 +42,8 @@ router.get("/promotions", async (req, res) => {
     res.status(404).send({ error: err.toString() });
   }
 });
+
+//router: post to db promotions
 router.post("/post-promotion", async (req, res) => {
   try {
     // console.log('Request for promotions JSON')
@@ -50,6 +54,8 @@ router.post("/post-promotion", async (req, res) => {
     res.status(404).send({ error: err.toString() });
   }
 });
+
+//params for 1C
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
   Акции: "",
@@ -64,6 +70,7 @@ let config1CPromotions = {
   },
 };
 
+//get promotions by query to 1C
 async function getPromotionsfrom1C() {
   const result = await axios
     .post(url1CPromotions, data1CPromotions, config1CPromotions)
@@ -77,6 +84,7 @@ async function getPromotionsfrom1C() {
     return result;
 }
 
+//set promotions to db
 async function setPromotion(promo) {
   try {
     var insertedData = promo.КаскадныеСкидки;
