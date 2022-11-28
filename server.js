@@ -5,7 +5,7 @@ const schedule = require('node-schedule')
 //add moment for dates
 const moment = require('moment')
 const getPromotions = require('./promotions1C/promotions')
-const {setPromotion} = require('./promotions1C/promotions')
+const checkDatePromotion = require('./database/dbQuerie')
 //add enviroment variables
 require('dotenv').config();
 const port = process.env.PORT;
@@ -26,7 +26,7 @@ app.get("/ping", (req, res) => {
 app.use('/api', getPromotions.router);
 
 
-schedule.scheduleJob({hour: 16, minute: 02}, async () => {
+schedule.scheduleJob({hour: 03, minute: 02}, async () => {
  log.info(moment().format('HH:mm DD-MM-YYYY'), 'Time to check Promotions From 1C')
   try{
     var result = await getPromotions.getPromotionsfrom1C(); 
@@ -37,6 +37,17 @@ schedule.scheduleJob({hour: 16, minute: 02}, async () => {
     console.log(err);
   }
 });
+schedule.scheduleJob({hour: 18, minute: 26}, async () => {
+  log.info(moment().format('HH:mm DD-MM-YYYY'), ' Time to check end date of promotions')
+   try{
+     var result = await checkDatePromotion.checkDatePromo(); 
+    //  log.info(result);
+    console.log('Schedule check end date: ', result);
+   }catch (err) {
+     log.info('Schedule check end date error: ', err);
+     console.log(err);
+   }
+ });
 
 
 app.listen(port, "0.0.0.0", () => {

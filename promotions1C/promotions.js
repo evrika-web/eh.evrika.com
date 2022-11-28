@@ -100,4 +100,5 @@ async function setPromotion(promo) {
     return err;
   }
 }
+
 module.exports = { router, getPromotionsfrom1C, setPromotion };
