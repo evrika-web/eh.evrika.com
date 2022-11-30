@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const moment = require('moment');
-const getPromotions = require('./api/promotions_old');
 const promotions = require('./api/promotions');
 const port = process.env.PORT;
 require('./scheduledJobs/schedule');
@@ -18,8 +17,7 @@ app.use(express.json({limit: '50mb'}));
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
-app.use('/api', getPromotions.router);
-app.use('/api/promotions', promotions);
+app.use('/api', promotions);
 
 app.listen(port, "0.0.0.0", () => {
   //log.info(`Server running on port ${port}`)
