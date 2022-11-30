@@ -26,6 +26,6 @@
  */
 exports.down = function(knex) {
 
-    return knex.schema.dropTable('promotion');
+    return knex.schema.dropTable('promotions');
 
 };
