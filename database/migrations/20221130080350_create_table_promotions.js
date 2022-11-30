@@ -4,7 +4,7 @@
  */
  exports.up = function(knex) {
 
-    return knex.schema.createTable('promotion', (table) =>{
+    return knex.schema.createTable('promotions', (table) =>{
         table.increments('promotion_id').primary().comment('Auto-generated id');
         table.text('doc_number').notNullable();
         table.text('type').notNullable();
