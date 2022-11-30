@@ -3,59 +3,64 @@ const router = express.Router();
 const axios = require("axios");
 const moment = require("moment");
 require("dotenv").config();
-const { addPromotion } = require("../database/dbQuerie");
+const { addPromotion, getActivePromoID } = require("../database/dbQuerie");
 
 const SimpleNodeLogger = require("simple-node-logger");
+const dbQuerie = require("../database/dbQuerie");
+
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-client.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-// router: get promotions from 1C
-router.get("/promotions", async (req, res) => {
+router.get("/active-promotions", async (req, res) => {
   try {
-    // console.log('Request for promotions JSON')
-    const promotions1C = await getPromotionsfrom1C();
+    log.info(
+      "GET request /active-promotions for promotions ",
+      req.params.filename
+    );
+    console.log(
+      "GET request /active-promotions for promotions ",
+      req.params.filename
+    );
 
-    const cascade = promotions1C.КаскадныеСкидки;
-
-    if (Array.isArray(cascade) && cascade.length > 0) {
-      for (var i in cascade) {
-        var participateCascade = false;
-        if (cascade[i].Участвуют === true) participateCascade = true;
-        var dbInsert = await setPromotion(
-          cascade[i].Номер,
-          "cascade",
-          cascade[i].ДатаНачала,
-          cascade[i].ДатаОкончания,
-          cascade[i].КаскадПроцентСкидки,
-          cascade[i].Товары,
-          participateCascade
-        );
-        console.log(dbInsert);
-        res.json(dbInsert);
-      }
-    }
+    dbQuerie.getActivePromotions((promotions) => {
+      log.info("GET result /active-promotions for promotions ", promotions);
+      res.json({ promotions });
+    });
   } catch (err) {
     log.info("/promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
 
-//router: post to db promotions
 router.post("/post-promotion", async (req, res) => {
   try {
-    // console.log('Request for promotions JSON')
-    var result = await setPromotion(req.body)
-      res.json(result);
+    log.info(
+      "POST request /post-promotion for promotions ",
+      req.params.filename
+    );
+    console.log(
+      "POST request /post-promotion for promotions ",
+      req.params.filename
+    );
+
+    if (req.body) {
+      dbQuerie.createPromotionData(req.body, (insertPromotions) => {
+        log.info("POST result /post-promotion for promotions ", insertPromotions);
+        insertPromotions.forEach(e => {
+          e.created_at = moment(e.created_at).format('HH:mm DD-MM-YYYY')
+      })
+        res.json({ insertPromotions });
+      });
+    }
   } catch (err) {
     log.info("/post-promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
 
-//params for 1C
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
   Акции: "",
@@ -70,21 +75,19 @@ let config1CPromotions = {
   },
 };
 
-//get promotions by query to 1C
 async function getPromotionsfrom1C() {
   const result = await axios
     .post(url1CPromotions, data1CPromotions, config1CPromotions)
     .then(function (response) {
-       return response.data.Акции;
+      return response.data.Акции;
     })
     .catch(function (error) {
-      log.info(`Response 1C: ` + error)
-       return error;
+      log.info(`Response 1C: ` + error);
+      return error;
     });
-    return result;
+  return result;
 }
 
-//set promotions to db
 async function setPromotion(promo) {
   try {
     var insertedData = promo.КаскадныеСкидки;
@@ -104,9 +107,9 @@ async function setPromotion(promo) {
       return dbInsert;
     }
   } catch (err) {
-    log.info('DBinsert ' + err);
+    log.info("DBinsert " + err);
     return err;
   }
 }
 
-module.exports = { router, getPromotionsfrom1C, setPromotion };
+module.exports = router;

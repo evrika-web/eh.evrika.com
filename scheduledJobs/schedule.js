@@ -2,7 +2,7 @@ const schedule = require('node-schedule')
 const moment = require('moment')
 
 //add functions
-const getPromotions = require('../promotions1C/promotions')
+const getPromotions = require('../api/promotions_old')
 const checkDatePromotion = require('../database/dbQuerie')
 
 //add logger
