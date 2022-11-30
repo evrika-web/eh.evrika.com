@@ -51,6 +51,7 @@ router.post("/post-promotion", async (req, res) => {
         log.info("POST result /post-promotion for promotions ", insertPromotions);
         insertPromotions.forEach(e => {
           e.created_at = moment(e.created_at).format('HH:mm DD-MM-YYYY')
+          e.updated_at = moment(e.created_at).format('HH:mm DD-MM-YYYY')
       })
         res.json({ insertPromotions });
       });
