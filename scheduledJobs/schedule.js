@@ -2,7 +2,7 @@ const schedule = require('node-schedule')
 const moment = require('moment')
 
 //add functions
-const promotions = require('../api/promotions')
+const promotions = require('../api/promotionsRouter')
 const dbQuerie = require('../database/dbQuerie')
 
 //add logger
