@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const moment = require('moment');
-const promotions = require('./api/promotions');
+const promotionsRouter = require('./api/promotionsRouter');
 const port = process.env.PORT;
 require('./scheduledJobs/schedule');
 require('dotenv').config();
@@ -17,7 +17,7 @@ app.use(express.json({limit: '50mb'}));
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
-app.use('/api', promotions);
+app.use('/api', promotionsRouter);
 
 app.listen(port, "0.0.0.0", () => {
   //log.info(`Server running on port ${port}`)
