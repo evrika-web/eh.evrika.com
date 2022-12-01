@@ -1,4 +1,6 @@
 const knex = require('./knex')
+const moment = require('moment')
+
 module.exports = {
     createPromotionData: (data, callback) => {
         knex('promotions')
@@ -29,6 +31,18 @@ module.exports = {
         .select('doc_number')
         .then((response) => {
             callback(response)
+        })
+        .catch((err) => {
+            console.log(err)
+            callback(undefined)
+        })
+    },
+    checkPromotionActivity: (callback) => {
+        knex('promotions')
+        .where('end_date', '<',moment().format("YYYY-MM-DDTHH:mm:ss"))
+        .update({active:false},['promotion_id','active'])
+        .then((update) => {
+            callback(update)
         })
         .catch((err) => {
             console.log(err)
