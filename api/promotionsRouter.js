@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
 const moment = require("moment");
 require("dotenv").config();
 
@@ -16,14 +15,6 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 router.get("/active-promotions", async (req, res) => {
   try {
-    log.info(
-      "GET request /active-promotions for promotions ",
-      req.params.filename
-    );
-    console.log(
-      "GET request /active-promotions for promotions ",
-      req.params.filename
-    );
 
     dbQuerie.getActivePromotions((promotions) => {
       log.info("GET result /active-promotions for promotions ", promotions);
@@ -36,29 +27,25 @@ router.get("/active-promotions", async (req, res) => {
 });
 router.get("/check-promotions-activity", async (req, res) => {
   try {
-    log.info(
-      "GET request /check-promotions-activity for promotions ",
-      req.params
-    );
-    console.log(
-      "GET request /check-promotions-activity for promotions ",
-      req.params
-    );
-
-    dbQuerie.checkPromotionActivity((updatedPromotions) => {
-      log.info("GET result /check-promotions-activity for promotions ", updatedPromotions);
-      res.json({ updatedPromotions });
+    dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+      log.info("GET result /check-promotions-activity for promotions end", updatedPromotions);
+      return updatedPromotions;
     });
+    dbQuerie.checkPromotionStart((updatedPromotions) => {
+      log.info("GET result /check-promotions-activity for promotions start", updatedPromotions);
+      return updatedPromotions;
+    });
+   
+    res.send('All promotions is up to date')
   } catch (err) {
     log.info("/promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
+  
 });
 
 router.post("/post-promotion", async (req, res) => {
   try {
-    log.info("POST request /post-promotion for promotions ", req.params);
-    console.log("POST request /post-promotion for promotions ", req.params);
 
     if (req.body) {
       const result = await promotionsFunctions.setPromotion(req.body);
