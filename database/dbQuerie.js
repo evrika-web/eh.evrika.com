@@ -37,10 +37,25 @@ module.exports = {
             callback(undefined)
         })
     },
-    checkPromotionActivity: (callback) => {
+    checkPromotionsEnd: (callback) => {
         knex('promotions')
-        .where('end_date', '<',moment().format("YYYY-MM-DDTHH:mm:ss"))
-        .update({active:false},['promotion_id','active'])
+        .where('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
+        .andWhere('active', true)
+        .update({active:false,updated_at: moment().format("YYYY-MM-DD HH:mm:ss") },['promotion_id','active'])
+        .then((update) => {
+            callback(update)
+        })
+        .catch((err) => {
+            console.log(err)
+            callback(undefined)
+        })
+    },
+    checkPromotionStart: (callback) => {
+        knex('promotions')
+        .where('start_date', '>',moment().format("YYYY-MM-DD HH:mm:ss"))
+        .andWhere('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
+        .andWhere('active', false)
+        .update({active:true, updated_at: moment().format("YYYY-MM-DD HH:mm:ss")},['promotion_id','active'])
         .then((update) => {
             callback(update)
         })
