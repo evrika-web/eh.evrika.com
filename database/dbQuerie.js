@@ -15,8 +15,8 @@ module.exports = {
         knex('promotions')
         .where({active:1})
         .select('*')
-        .then((update) => {
-            callback(update)
+        .then((response) => {
+            callback(response)
         })
         .catch((err) => {
             console.log(err)
