@@ -37,31 +37,19 @@ router.get("/active-promotions", async (req, res) => {
 
 router.post("/post-promotion", async (req, res) => {
   try {
-    log.info(
-      "POST request /post-promotion for promotions ",
-      req.params.filename
-    );
-    console.log(
-      "POST request /post-promotion for promotions ",
-      req.params.filename
-    );
+    log.info("POST request /post-promotion for promotions ", req.params);
+    console.log("POST request /post-promotion for promotions ", req.params);
 
     if (req.body) {
-      dbQuerie.createPromotionData(req.body, (insertPromotions) => {
-        log.info("POST result /post-promotion for promotions ", insertPromotions);
-        insertPromotions.forEach(e => {
-          e.created_at = moment(e.created_at).format('HH:mm DD-MM-YYYY')
-          e.updated_at = moment(e.created_at).format('HH:mm DD-MM-YYYY')
-      })
-        res.json({ insertPromotions });
-      });
+      const result = await setPromotion(req.body);
+      res.json({ result });
     }
   } catch (err) {
     log.info("/post-promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
-
+//Данные для запроса в 1С
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
   Акции: "",
@@ -75,7 +63,7 @@ let config1CPromotions = {
     },
   },
 };
-
+//Получение данных по акциям с 1Ски
 async function getPromotionsfrom1C() {
   const result = await axios
     .post(url1CPromotions, data1CPromotions, config1CPromotions)
@@ -88,24 +76,77 @@ async function getPromotionsfrom1C() {
     });
   return result;
 }
+//маппинг и проверка данных для загрузки в бд
+async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
+  var responseData = [];
+  try {
+    for (var i in dataOld) {
+      if (getActivePromotionsID!==undefined&& getActivePromotionsID!==[]&& getActivePromotionsID.includes(dataOld[i].Номер)) continue;
+      var participateCascade = true;
+      var cascadePercent = [];
+      if (dataOld[i].Участвуют !== undefined)
+        participateCascade = dataOld[i].Участвуют;
+      if (dataOld[i].КаскадПроцентСкидки !== undefined)
+        cascadePercent = dataOld[i].КаскадПроцентСкидки;
 
+      var tempData = {
+        doc_number: dataOld[i].Номер,
+        type: promoName,
+        start_date: dataOld[i].ДатаНачала,
+        end_date: dataOld[i].ДатаОкончания,
+        percents: JSON.stringify(cascadePercent),
+        products: JSON.stringify(dataOld[i].Товары),
+        participate: participateCascade,
+        active: true,
+        created_at: moment().format("YYYY-MM-DDTHH:mm:ss"),
+        updated_at: moment().format("YYYY-MM-DDTHH:mm:ss"),
+      };
+      responseData.push(tempData);
+    }
+    return responseData;
+  } catch (err) {
+    log.info("promotionsMapping " + err);
+    return err;
+  }
+}
+//отправка акций в бд
 async function setPromotion(promo) {
   try {
-    var insertedData = promo.КаскадныеСкидки;
-    for (var i in insertedData) {
-      var participateCascade = true;
-      if (insertedData[i].Участвуют !== undefined)
-        participateCascade = insertedData[i].Участвуют;
-      var dbInsert = await addPromotion(
-        insertedData[i].Номер,
-        "cascade",
-        insertedData[i].ДатаНачала,
-        insertedData[i].ДатаОкончания,
-        insertedData[i].КаскадПроцентСкидки,
-        insertedData[i].Товары,
-        participateCascade
+    var activePromotions =  dbQuerie.getActivePromotionsID((promotions) => {
+      log.info("GET result /active-promotions for promotions ", promotions);
+      return promotions ;
+    });
+    console.log('activePromotions ', activePromotions)
+    var data = [];
+    if (promo.КаскадныеСкидки != []) {
+      var dataCascade = data.concat(
+        await promotionsMapping(
+          promo.КаскадныеСкидки,
+          "cascade",
+          activePromotions
+        )
       );
-      return dbInsert;
+    }
+    if (promo.Купоны != []) {
+      var dataCoupon = dataCascade.concat(
+        await promotionsMapping(promo.Купоны, "coupon", activePromotions)
+      );
+    }
+    if (promo.Промокоды != []) {
+      var dataPromocode = dataCoupon.concat(
+        await promotionsMapping(promo.Промокоды, "promocode", activePromotions)
+      );
+    }
+    if (dataPromocode != []) {
+      dbQuerie.createPromotionData(dataPromocode, (insertPromotions) => {
+        log.info(
+          "POST result /post-promotion for promotions ",
+          insertPromotions
+        );
+        return insertPromotions;
+      });
+    } else {
+      return "Нет данных для добавления в базу";
     }
   } catch (err) {
     log.info("DBinsert " + err);

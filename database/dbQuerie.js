@@ -23,4 +23,16 @@ module.exports = {
             callback(undefined)
         })
     },
+    getActivePromotionsID: (callback) => {
+        knex('promotions')
+        .where({active:1})
+        .select('doc_number')
+        .then((response) => {
+            callback(response)
+        })
+        .catch((err) => {
+            console.log(err)
+            callback(undefined)
+        })
+    },
 }
