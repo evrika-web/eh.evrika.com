@@ -26,7 +26,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 //      }
 //    });
    
-   schedule.scheduleJob({hour: 20, minute: 19}, async () => {
+   schedule.scheduleJob({hour: 20, minute: 23}, async () => {
      log.info(moment().format('HH:mm DD-MM-YYYY'), ' Time to check end date of promotions')
       try{
         var resultEnd = dbQuerie.checkPromotionsEnd((updatedPromotions) => {
@@ -34,17 +34,14 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
             "checkPromotionsActivity ",
             updatedPromotions
           );
-          return 'Promotions is over: ',updatedPromotions;
         });
         var resultStart = dbQuerie.checkPromotionsEnd((updatedPromotions) => {
           log.info(
             "checkPromotionsActivity ",
             updatedPromotions
           );
-          return 'Promotions is over: ',updatedPromotions;
         });
-       //  log.info(result);
-       console.log('Schedule check end date: ', resresultEndult,'Schedule check start date: ', resultStart);
+       log.info('Schedule check All promotions is up to date');
       }catch (err) {
         log.info('Schedule check end date error: ', err);
         console.log(err);
