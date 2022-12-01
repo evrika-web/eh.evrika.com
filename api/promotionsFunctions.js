@@ -41,8 +41,10 @@ async function getPromotionsfrom1C() {
 async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
   var responseData = [];
   try {
+    var currDate = moment().format("YYYY-MM-DDTHH:mm:ss");
     for (var i in dataOld) {
       if (getActivePromotionsID!==undefined&& getActivePromotionsID!==[]&& getActivePromotionsID.includes(dataOld[i].Номер)) continue;
+      if (dataOld[i].ДатаОкончания < currDate) continue;
       var participateCascade = true;
       var cascadePercent = [];
       if (dataOld[i].Участвуют !== undefined)
@@ -59,8 +61,8 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
         products: JSON.stringify(dataOld[i].Товары),
         participate: participateCascade,
         active: true,
-        created_at: moment().format("YYYY-MM-DDTHH:mm:ss"),
-        updated_at: moment().format("YYYY-MM-DDTHH:mm:ss"),
+        created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+        updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
       };
       responseData.push(tempData);
     }
@@ -73,10 +75,15 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
 //отправка акций в бд
 async function setPromotion(promo) {
   try {
-    var activePromotions =  dbQuerie.getActivePromotionsID((promotions) => {
+    var activePromotionsDB =  dbQuerie.getActivePromotionsID((promotions) => {
       log.info("GET result /active-promotions for promotions ", promotions);
       return promotions ;
     });
+    var activePromotions=[];
+    for (var i in activePromotionsDB)
+    {
+        activePromotions.push(activePromotionsDB[i].doc_number)
+    }
     console.log('activePromotions ', activePromotions)
     var data = [];
     if (promo.КаскадныеСкидки != []) {
