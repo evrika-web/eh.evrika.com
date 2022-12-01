@@ -13,7 +13,7 @@
         table.json('percents').notNullable();
         table.json('products').notNullable();
         table.boolean('participate').notNullable();
-        table.boolean('active')
+        table.boolean('active').notNullable();
         table.datetime('created_at')
         table.datetime('updated_at')
     });
