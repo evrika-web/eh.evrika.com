@@ -10,7 +10,7 @@
         table.text('type').notNullable();
         table.datetime('start_date').notNullable();
         table.datetime('end_date').notNullable();
-        table.json('percents').notNullable();
+        table.json('percents')
         table.json('products').notNullable();
         table.boolean('participate').notNullable();
         table.boolean('active').notNullable();
