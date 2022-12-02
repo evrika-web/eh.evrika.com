@@ -123,5 +123,21 @@ async function setPromotion(promo) {
     return err;
   }
 }
-
-module.exports = {setPromotion, promotionsMapping, getPromotionsfrom1C};
+//Проверка на активность акций
+async function checkPromotionsActivity() {
+    try{
+        dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+            log.info("GET result /check-promotions-activity for promotions end", updatedPromotions);
+            return updatedPromotions;
+          });
+          dbQuerie.checkPromotionStart((updatedPromotions) => {
+            log.info("GET result /check-promotions-activity for promotions start", updatedPromotions);
+            return updatedPromotions;
+          });
+          return 'All promotions is up to date';
+    } catch (err) {
+        log.info("Check prmotions activity " + err);
+        return err;
+      }
+  }
+module.exports = {setPromotion, promotionsMapping, getPromotionsfrom1C, checkPromotionsActivity};

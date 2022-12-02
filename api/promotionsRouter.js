@@ -25,23 +25,24 @@ router.get("/active-promotions", async (req, res) => {
     res.status(404).send({ error: err.toString() });
   }
 });
-router.get("/check-promotions-activity", async (req, res) => {
+router.get("/add-promotions-from-1c", async (req, res) => {
   try {
-    dbQuerie.checkPromotionsEnd((updatedPromotions) => {
-      log.info("GET result /check-promotions-activity for promotions end", updatedPromotions);
-      return updatedPromotions;
-    });
-    dbQuerie.checkPromotionStart((updatedPromotions) => {
-      log.info("GET result /check-promotions-activity for promotions start", updatedPromotions);
-      return updatedPromotions;
-    });
-   
-    res.send('All promotions is up to date')
+    var promo1C = await promotionsFunctions.getPromotionsfrom1C();
+    // var activePromo = await promotionsFunctions.
+    var postPromo = await promotionsFunctions.setPromotion(promo1C);
   } catch (err) {
     log.info("/promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
-  
+});
+router.get("/check-promotions-activity", async (req, res) => {
+  try {
+    var checkPromo = await promotionsFunctions.checkPromotionsActivity();   
+    res.send(checkPromo)
+  } catch (err) {
+    log.info("/promotions error: " + err);
+    res.status(404).send({ error: err.toString() });
+  }  
 });
 
 router.post("/post-promotion", async (req, res) => {
