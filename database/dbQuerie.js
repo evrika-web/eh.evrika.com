@@ -41,7 +41,7 @@ module.exports = {
         knex('promotions')
         .where('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
         .andWhere('active', true)
-        .update({active:false,updated_at: moment().format("YYYY-MM-DD HH:mm:ss") },['promotion_id','active'])
+        .update({active:false,updated_at: moment().format("YYYY-MM-DD HH:mm:ss") })
         .then((update) => {
             callback(update)
         })
@@ -52,10 +52,10 @@ module.exports = {
     },
     checkPromotionStart: (callback) => {
         knex('promotions')
-        .where('start_date', '>',moment().format("YYYY-MM-DD HH:mm:ss"))
-        .andWhere('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
-        .andWhere('active', false)
-        .update({active:true, updated_at: moment().format("YYYY-MM-DD HH:mm:ss")},['promotion_id','active'])
+        .where('start_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
+        .where('end_date', '>',moment().format("YYYY-MM-DD HH:mm:ss"))
+        .where('active', false)
+        .update({active:true, updated_at: moment().format("YYYY-MM-DD HH:mm:ss")})
         .then((update) => {
             callback(update)
         })

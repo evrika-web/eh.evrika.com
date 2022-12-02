@@ -26,24 +26,24 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 //      }
 //    });
    
-   schedule.scheduleJob({hour: 20, minute: 23}, async () => {
+   schedule.scheduleJob({hour: 10, minute: 57}, async () => {
      log.info(moment().format('HH:mm DD-MM-YYYY'), ' Time to check end date of promotions')
       try{
-        var resultEnd = dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+        dbQuerie.checkPromotionsEnd((updatedPromotions) => {
           log.info(
-            "checkPromotionsActivity ",
+            "checkPromotionsActivity end date ",
             updatedPromotions
           );
         });
-        var resultStart = dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+        dbQuerie.checkPromotionStart((updatedPromotions) => {
           log.info(
-            "checkPromotionsActivity ",
+            "checkPromotionsActivity start date ",
             updatedPromotions
           );
         });
        log.info('Schedule check All promotions is up to date');
       }catch (err) {
-        log.info('Schedule check end date error: ', err);
+        log.info('Schedule check end,start date error: ', err);
         console.log(err);
       }
     });

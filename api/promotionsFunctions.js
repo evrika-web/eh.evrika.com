@@ -45,6 +45,8 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
     for (var i in dataOld) {
       if (getActivePromotionsID!==undefined&& getActivePromotionsID!==[]&& getActivePromotionsID.includes(dataOld[i].Номер)) continue;
       if (dataOld[i].ДатаОкончания < currDate) continue;
+      var active = false;
+      if(dataOld[i].ДатаНачала> currDate)active=true
       var participateCascade = true;
       var cascadePercent = [];
       if (dataOld[i].Участвуют !== undefined)
@@ -60,7 +62,7 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
         percents: JSON.stringify(cascadePercent),
         products: JSON.stringify(dataOld[i].Товары),
         participate: participateCascade,
-        active: true,
+        active: active,
         created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
       };
