@@ -2,10 +2,10 @@ const knex = require('./knex')
 const moment = require('moment')
 
 module.exports = {
-    createPromotionData: (data, callback) => {
-        knex('promotions')
+    createPromotionData: async (data, callback) => {
+        await knex('promotions')
         .insert(data, "*")
-        .then((update) => {
+        .then( (update) => {
             callback(update)
         })
         .catch((err) => {
@@ -13,8 +13,8 @@ module.exports = {
             callback(undefined)
         })
     },
-    getActivePromotions: (callback) => {
-        knex('promotions')
+    getActivePromotions:async (callback) => {
+        await knex('promotions')
         .where({active:1})
         .select('*')
         .then((response) => {
@@ -25,11 +25,11 @@ module.exports = {
             callback(undefined)
         })
     },
-    getActivePromotionsID: (callback) => {
-        knex('promotions')
+    getActivePromotionsID: async (callback) => {
+         await knex('promotions')
         .where({active:1})
         .select('doc_number')
-        .then((response) => {
+        .then( (response) => {
             callback(response)
         })
         .catch((err) => {
@@ -37,8 +37,8 @@ module.exports = {
             callback(undefined)
         })
     },
-    checkPromotionsEnd: (callback) => {
-        knex('promotions')
+    checkPromotionsEnd: async (callback) => {
+        await knex('promotions')
         .where('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
         .andWhere('active', true)
         .update({active:false,updated_at: moment().format("YYYY-MM-DD HH:mm:ss") })
@@ -50,8 +50,8 @@ module.exports = {
             callback(undefined)
         })
     },
-    checkPromotionStart: (callback) => {
-        knex('promotions')
+    checkPromotionStart: async (callback) => {
+        await knex('promotions')
         .where('start_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
         .where('end_date', '>',moment().format("YYYY-MM-DD HH:mm:ss"))
         .where('active', false)

@@ -140,4 +140,32 @@ async function checkPromotionsActivity() {
         return err;
       }
   }
-module.exports = {setPromotion, promotionsMapping, getPromotionsfrom1C, checkPromotionsActivity};
+  //Получение активных акций all data /only id
+async function getActivePromotions(type) {
+    try{
+        var resultData
+        switch(type){
+            case 'data':
+                var res = await dbQuerie.getActivePromotions((promotions) => {                    
+                    resultData= promotions;                    
+                  });
+                log.info("GET result checkPromotionsActivity for promotions data", res);
+                  break;
+            
+            default:
+                var res = await dbQuerie.getActivePromotionsID((promotionsIDs) => {
+                    resultData= promotionsIDs ;
+                });
+                log.info("GET result checkPromotionsActivity for promotions ids", res);
+                  break;
+            
+        }
+        console.log('resultData is ', resultData)
+        return resultData
+    } catch (err) {
+        log.info("Check promotions activity " + err);
+        return err;
+      }
+  }
+  
+module.exports = {setPromotion, promotionsMapping, getPromotionsfrom1C, checkPromotionsActivity, getActivePromotions};
