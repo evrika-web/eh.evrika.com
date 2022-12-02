@@ -134,18 +134,16 @@ async function checkPromotionsActivity() {
         "GET result /check-promotions-activity for promotions end",
         updatedPromotions
       );
-      return updatedPromotions;
     });
     await dbQuerie.checkPromotionStart((updatedPromotions) => {
       log.info(
         "GET result /check-promotions-activity for promotions start",
         updatedPromotions
       );
-      return updatedPromotions;
     });
     return "All promotions is up to date";
   } catch (err) {
-    log.info("Check prmotions activity " + err);
+    log.info("Check prmotions activity err " + err);
     return err;
   }
 }
