@@ -14,7 +14,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
   Акции: "",
-  MainDivisionCode: "000000017",
+  MainDivisionCode: "HQ1000022",
 };
 let config1CPromotions = {
   headers: {
@@ -39,14 +39,20 @@ async function getPromotionsfrom1C() {
 }
 //маппинг и проверка данных для загрузки в бд
 async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
-  var responseData = [];
   try {
+    var responseData = [];
     var currDate = moment().format("YYYY-MM-DDTHH:mm:ss");
+
     for (var i in dataOld) {
-      if (getActivePromotionsID!==undefined&& getActivePromotionsID!==[]&& getActivePromotionsID.includes(dataOld[i].Номер)) continue;
+      if (
+        getActivePromotionsID !== undefined &&
+        getActivePromotionsID !== [] &&
+        getActivePromotionsID.includes(dataOld[i].Номер)
+      )
+        continue;
       if (dataOld[i].ДатаОкончания < currDate) continue;
       var active = false;
-      if(dataOld[i].ДатаНачала> currDate)active=true
+      if (dataOld[i].ДатаНачала < currDate) active = true;
       var participateCascade = true;
       var cascadePercent = [];
       if (dataOld[i].Участвуют !== undefined)
@@ -77,16 +83,11 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
 //отправка акций в бд
 async function setPromotion(promo) {
   try {
-    var activePromotionsDB =  dbQuerie.getActivePromotionsID((promotions) => {
-      log.info("GET result /active-promotions for promotions ", promotions);
-      return promotions ;
-    });
-    var activePromotions=[];
-    for (var i in activePromotionsDB)
-    {
-        activePromotions.push(activePromotionsDB[i].doc_number)
+    var activePromotionsDB = await getActivePromotions("id");
+    var activePromotions = [];
+    for (var i in activePromotionsDB) {
+      activePromotions.push(activePromotionsDB[i].doc_number);
     }
-    console.log('activePromotions ', activePromotions)
     var data = [];
     if (promo.КаскадныеСкидки != []) {
       var dataCascade = data.concat(
@@ -107,16 +108,18 @@ async function setPromotion(promo) {
         await promotionsMapping(promo.Промокоды, "promocode", activePromotions)
       );
     }
-    if (dataPromocode != []) {
-      dbQuerie.createPromotionData(dataPromocode, (insertPromotions) => {
+    if (dataPromocode.length == 0) {
+      return "Нет данных для добавления в базу";
+    } else {
+        var resulInsert
+      await dbQuerie.createPromotionData(dataPromocode, (insertPromotions) => {
         log.info(
           "POST result /post-promotion for promotions ",
           insertPromotions
         );
-        return insertPromotions;
-      });
-    } else {
-      return "Нет данных для добавления в базу";
+        resulInsert = insertPromotions
+      });      
+      return 'Акции обновлены, последний добавленный id: ' + resulInsert;
     }
   } catch (err) {
     log.info("DBinsert " + err);
@@ -125,47 +128,55 @@ async function setPromotion(promo) {
 }
 //Проверка на активность акций
 async function checkPromotionsActivity() {
-    try{
-        dbQuerie.checkPromotionsEnd((updatedPromotions) => {
-            log.info("GET result /check-promotions-activity for promotions end", updatedPromotions);
-            return updatedPromotions;
-          });
-          dbQuerie.checkPromotionStart((updatedPromotions) => {
-            log.info("GET result /check-promotions-activity for promotions start", updatedPromotions);
-            return updatedPromotions;
-          });
-          return 'All promotions is up to date';
-    } catch (err) {
-        log.info("Check prmotions activity " + err);
-        return err;
-      }
+  try {
+    await dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+      log.info(
+        "GET result /check-promotions-activity for promotions end",
+        updatedPromotions
+      );
+      return updatedPromotions;
+    });
+    await dbQuerie.checkPromotionStart((updatedPromotions) => {
+      log.info(
+        "GET result /check-promotions-activity for promotions start",
+        updatedPromotions
+      );
+      return updatedPromotions;
+    });
+    return "All promotions is up to date";
+  } catch (err) {
+    log.info("Check prmotions activity " + err);
+    return err;
   }
-  //Получение активных акций all data /only id
+}
+//Получение активных акций all data /only id
 async function getActivePromotions(type) {
-    try{
-        var resultData
-        switch(type){
-            case 'data':
-                var res = await dbQuerie.getActivePromotions((promotions) => {                    
-                    resultData= promotions;                    
-                  });
-                log.info("GET result checkPromotionsActivity for promotions data", res);
-                  break;
-            
-            default:
-                var res = await dbQuerie.getActivePromotionsID((promotionsIDs) => {
-                    resultData= promotionsIDs ;
-                });
-                log.info("GET result checkPromotionsActivity for promotions ids", res);
-                  break;
-            
-        }
-        console.log('resultData is ', resultData)
-        return resultData
-    } catch (err) {
-        log.info("Check promotions activity " + err);
-        return err;
-      }
+  try {
+    var resultData;
+    switch (type) {
+      case "data":
+        await dbQuerie.getActivePromotions((promotions) => {
+          resultData = promotions;
+        });
+        break;
+
+      default:
+        await dbQuerie.getActivePromotionsID((promotionsIDs) => {
+          resultData = promotionsIDs;
+        });
+        break;
+    }
+    return resultData;
+  } catch (err) {
+    log.info("Check promotions activity " + err);
+    return err;
   }
-  
-module.exports = {setPromotion, promotionsMapping, getPromotionsfrom1C, checkPromotionsActivity, getActivePromotions};
+}
+
+module.exports = {
+  setPromotion,
+  promotionsMapping,
+  getPromotionsfrom1C,
+  checkPromotionsActivity,
+  getActivePromotions,
+};
