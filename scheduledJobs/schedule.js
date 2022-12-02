@@ -14,17 +14,17 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //schedules 
-// schedule.scheduleJob({hour: 19, minute: 08}, async () => {
-//     log.info(moment().format('HH:mm DD-MM-YYYY'), 'Time to check Promotions From 1C')
-//      try{
-//        var result = await promotions.getPromotionsfrom1C(); 
-//        var updateDB = await promotions.setPromotion(result);
-//        log.info(updateDB);
-//      }catch (err) {
-//        log.info(err);
-//        console.log(err);
-//      }
-//    });
+schedule.scheduleJob({hour: 19, minute: 08}, async () => {
+    log.info(moment().format('HH:mm DD-MM-YYYY'), 'Time to check new Promotions From 1C')
+     try{
+      var promo1C = await promotionsFunctions.getPromotionsfrom1C();
+      var postPromo = await promotionsFunctions.setPromotion(promo1C);
+       log.info(postPromo);
+     }catch (err) {
+       log.info(err);
+       console.log(err);
+     }
+   });
    
    schedule.scheduleJob({hour: 10, minute: 57}, async () => {
      log.info(moment().format('HH:mm DD-MM-YYYY'), ' Time to check end date of promotions')

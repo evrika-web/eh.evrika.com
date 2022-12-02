@@ -27,7 +27,6 @@ router.get("/add-promotions-from-1c", async (req, res) => {
   try {
     var promo1C = await promotionsFunctions.getPromotionsfrom1C();
     var postPromo = await promotionsFunctions.setPromotion(promo1C);
-    console.log(postPromo)
     res.send(postPromo);
   } catch (err) {
     log.info("/promotions error: " + err);
