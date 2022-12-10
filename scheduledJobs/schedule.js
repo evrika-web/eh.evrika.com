@@ -3,7 +3,6 @@ const moment = require("moment");
 
 //add functions
 const promotionsFunctions = require("../api/promotionsFunctions");
-const dbQuerie = require("../database/dbQuerie");
 
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");
