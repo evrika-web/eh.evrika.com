@@ -6,6 +6,11 @@ Express js server handler for all external services in [Evrika.com](https://evri
 - ✨Magic ✨
 
 ```bash
+# Первый запуск проекта
+npm install
+```
+
+```bash
 # Для запуска проекта
 npm run server
 ```
