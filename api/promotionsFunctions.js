@@ -14,7 +14,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
   Акции: "",
-  MainDivisionCode: "HQ1000022",
+  MainDivisionCode: "000000017",
 };
 let config1CPromotions = {
   headers: {

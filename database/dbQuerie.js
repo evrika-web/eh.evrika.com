@@ -64,4 +64,20 @@ module.exports = {
             callback(undefined)
         })
     },
+    productExistCascade: async (article, callback) => {
+        await knex('promotions')
+        .where('active',true)
+        .andWhere('type','cascade')
+        // .whereLike('products', '%'+article+'%')
+        .whereJsonObject('products',  [article] )
+        // .whereJsonPath('products', '$', '=', [article])
+        .select('doc_number')
+        .then( (response) => {
+            callback(response)
+        })
+        .catch((err) => {
+            console.log(err)
+            callback(undefined)
+        })
+    },
 }
