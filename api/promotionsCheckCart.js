@@ -16,21 +16,33 @@ async function checkCart(cart) {
   var categoriesCount = [];
   cartSorted.forEach((e) => {
     var resultCheckExist = dbCheck(e.article);
-    if (resultCheckExist == []) cartNotCascade.push(e);
+    if (resultCheckExist == []) {cartNotCascade.push(e); console.log("Товара нет в каскадах ", e.article)}
     else {
-      e.cascadeNumber = resultCheckExist[0].doc_number;
       if (e.quantity <= 1) {
-        var tempObj = {category:e.category};
+        var tempObj = {
+          category: e.category,
+          count: 0,
+        };
+        var categoryIndex
+        var checkCategory = categoriesCount.some(x => x.category == e.category);        
+        console.log("checkCategory ", checkCategory)
+        console.log("categoryIndex ", categoryIndex)
         if (
           categoriesCount == [] ||
-          categoriesCount.indexOf(e.category) == -1
+          !checkCategory
         ) {
-          categoriesCount.push(e.category);
+          e.cascadeNumber = resultCheckExist[0].doc_number;
+          e.cascade = true;
+          categoriesCount.push(tempObj);
           cartCascade.concat(e);
-        } else if (categoriesCount[e.category] < 2) {
-          categoriesCount[e.category] += 1;
+        } else if (checkCategory && categoriesCount[categoryIndex].count < 2) {          
+          e.cascadeNumber = resultCheckExist[0].doc_number;
+          e.cascade = true;
+          categoriesCount[categoryIndex].count += 1;
+          cartCascade.concat(e);
         }
       }
+      else{cartNotCascade.push(e); console.log("Количество товаров больше 1 ", e.article)}
     }
   });
   return cartMapped;
