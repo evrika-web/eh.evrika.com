@@ -21,5 +21,5 @@ app.use('/api', promotionsRouter);
 
 app.listen(port, "0.0.0.0", () => {
   //log.info(`Server running on port ${port}`)
-  //console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
