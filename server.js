@@ -3,6 +3,7 @@ const app = express();
 const moment = require('moment');
 const promotionsRouter = require('./api/promotionsRouter');
 const port = process.env.PORT;
+const host = process.env.HOST;
 require('./scheduledJobs/schedule');
 require('dotenv').config();
 
@@ -19,7 +20,7 @@ app.get("/ping", (req, res) => {
 });
 app.use('/api', promotionsRouter);
 
-app.listen(port, "0.0.0.0", () => {
-  //log.info(`Server running on port ${port}`)
-  console.log(`Server running on port ${port}`);
+app.listen(port, host, () => {
+  //log.info(`Server running on port ${port} and host ${host}`)
+  console.log(`Server running on port ${port} and host ${host}`);
 });
