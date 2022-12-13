@@ -62,7 +62,7 @@ async function checkCart(cart) {
         }
 
         if (categoriesCount == [] || !checkCategory) {
-          cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
@@ -70,7 +70,7 @@ async function checkCart(cart) {
           // console.log( "1 if cartCascade ", cartCascade)
         } else if (checkCategory && categoriesCount[categoryIndex].count < 2 ) {
           // console.log( "2 if cartCascade ", cartCascade)
-          cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;;
           cartSorted[cartObj].cascade = true;
           categoriesCount[categoryIndex].count += 1;
@@ -90,7 +90,7 @@ async function checkCart(cart) {
   // console.log("cartCascade ", cartCascade);
   try {
     var cascadePercents 
-    await dbQuerie.percentsCascade(cartCascade[0].cascadeNumber, (result) => {
+    await dbQuerie.percentsCascade(cartCascade[0].docNumber, (result) => {
       // console.log("percentsCascade ", result )
       if(Array.isArray(result)&& result!=[])
       cascadePercents = JSON.parse(result[0].cascadePercents);
@@ -105,7 +105,7 @@ async function checkCart(cart) {
   if (cartCascade != []) {
     var lastIndexCascadeArray = cartCascade.length -1;
     console.log("lastIndexCascadeArray ", lastIndexCascadeArray);
-    // console.log("cascadeNumber ",cartCascade);
+    // console.log("docNumber ",cartCascade);
     var cascadePercent = 20 
     if(cascadePercents.length >= lastIndexCascadeArray){
       cascadePercent = cascadePercents[lastIndexCascadeArray-1];
