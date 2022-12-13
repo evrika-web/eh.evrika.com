@@ -121,7 +121,7 @@ async function checkCart(cart) {
   }
 
   var cartMapped = cartCascade.concat(cartNotCascade);
-  if (cartMapped != []) return { err: false, cart: cartMapped, errMessage: "" };
+  if (cartMapped != []) return { err: false, cart: cartMapped };
   else {
     return { err: true, errMessage: "Something wrong" };
   }
