@@ -1,59 +1,145 @@
-async function checkCart(cart) {
-  if (cart.length < 2) return cart;
+const moment = require("moment");
+const SimpleNodeLogger = require("simple-node-logger");
+const dbQuerie = require("../database/dbQuerie");
 
-  var cartSorted = cart.sort(function (a, b) {
-    if (a.price > b.price) {
-      return 1;
-    } else if (a.price < b.price) {
-      return -1;
-    } else {
-      return 0;
-    }
-  });
-  console.log("sorted cart ", cartSorted);
+opts = {
+  logFilePath: `logs/${moment().format(
+    "DD-MM-YYYY"
+  )}-promotions-check-cart.log`,
+  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
+};
+const log = SimpleNodeLogger.createSimpleLogger(opts);
+
+async function checkCart(cart) {
+  if (cart.length < 2) {
+    console.log("Для каскадов нужно минимум два разных товаров");
+    return {
+      err: false,
+      errMessage: "Для каскадов нужно минимум два разных товаров",
+    };
+  }
   var cartCascade = [];
   var cartNotCascade = [];
   var categoriesCount = [];
-  cartSorted.forEach((e) => {
-    var resultCheckExist = dbCheck(e.article);
-    if (resultCheckExist == []) {cartNotCascade.push(e); console.log("Товара нет в каскадах ", e.article)}
-    else {
-      if (e.quantity <= 1) {
+  var cartSorted = cart.sort(function (a, b) {
+    return b.price - a.price;
+  });
+  // console.log("cartSorted ", cartSorted)
+
+  for(var cartObj in cartSorted){  
+    // console.log("cartSorted[cartObj] ", cartSorted[cartObj].article)
+    var resultCheckExist = await dbCheckExistCascade(cartSorted[cartObj].article);
+    // console.log("resultCheckExist ", resultCheckExist);
+    if (resultCheckExist == undefined || resultCheckExist == []) {
+      cartSorted[cartObj].cascadeNumber = "";
+      cartSorted[cartObj].cascade = false;
+      cartNotCascade.push(cartSorted[cartObj]);
+      console.log("Товара нет в каскадах ", cartSorted[cartObj].article);
+      // console.log("cartNotCascade ", cartNotCascade);
+    } else {
+      if (cartSorted[cartObj].quantity <= 1) {
         var tempObj = {
-          category: e.category,
-          count: 0,
+          category: cartSorted[cartObj].category,
+          count: 1,
         };
-        var categoryIndex
-        var checkCategory = categoriesCount.some(x => x.category == e.category);        
-        console.log("checkCategory ", checkCategory)
-        console.log("categoryIndex ", categoryIndex)
-        if (
-          categoriesCount == [] ||
-          !checkCategory
-        ) {
-          e.cascadeNumber = resultCheckExist[0].doc_number;
-          e.cascade = true;
-          categoriesCount.push(tempObj);
-          cartCascade.concat(e);
-        } else if (checkCategory && categoriesCount[categoryIndex].count < 2) {          
-          e.cascadeNumber = resultCheckExist[0].doc_number;
-          e.cascade = true;
-          categoriesCount[categoryIndex].count += 1;
-          cartCascade.concat(e);
+        var categoryIndex;
+        var checkCategory = categoriesCount.some(
+          (x) => x.category == cartSorted[cartObj].category
+        );
+        if (checkCategory) {
+          categoriesCount.some((x, i) => {
+            x.category == cartSorted[i].category;
+            categoryIndex = i;
+          });
         }
+        var checkProductDubl = categoriesCount.some(
+          (x) => x.category == cartSorted[cartObj].article
+        );
+        if (checkCategory) {
+          categoriesCount.some((x, i) => {
+            x.category == cartSorted[i].category;
+            categoryIndex = i;
+          });
+        }
+
+        if (categoriesCount == [] || !checkCategory) {
+          cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].cascade = true;
+          categoriesCount.push(tempObj);
+          cartCascade.push(cartSorted[cartObj]);
+          // console.log( "1 if cartCascade ", cartCascade)
+        } else if (checkCategory && categoriesCount[categoryIndex].count < 2 ) {
+          // console.log( "2 if cartCascade ", cartCascade)
+          cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].cascade = true;
+          categoriesCount[categoryIndex].count += 1;
+          cartCascade.push(cartSorted[cartObj]);
+        }
+        else{
+          cartSorted[cartObj].cascadeNumber = "";
+          cartSorted[cartObj].cascade = false;
+          cartNotCascade.push(cartSorted[cartObj]);
+        }
+      } else {
+        cartSorted[cartObj].cascadeNumber = "";
+        cartSorted[cartObj].cascade = false;
+        cartNotCascade.push(cartSorted[cartObj]);
+        console.log("Количество товаров больше 1 ", e.article);
       }
-      else{cartNotCascade.push(e); console.log("Количество товаров больше 1 ", e.article)}
     }
-  });
-  return cartMapped;
+  }
+  // console.log("cartCascade ", cartCascade);
+  try {
+    var cascadePercents 
+    await dbQuerie.percentsCascade(cartCascade[0].cascadeNumber, (result) => {
+      // console.log("percentsCascade ", result )
+      if(Array.isArray(result)&& result!=[])
+      cascadePercents = JSON.parse(result[0].cascadePercents);
+      else{
+        cascadePercents = [25,50,75]
+      }
+    });
+  } catch (error) {
+    console.log("error percentsCascade", error);
+  }
+  console.log("cascadePercents ", cascadePercents);
+  if (cartCascade != []) {
+    var lastIndexCascadeArray = cartCascade.length -1;
+    console.log("lastIndexCascadeArray ", lastIndexCascadeArray);
+    // console.log("cascadeNumber ",cartCascade);
+    var cascadePercent = 20 
+    if(cascadePercents.length >= lastIndexCascadeArray){
+      cascadePercent = cascadePercents[lastIndexCascadeArray-1];
+      cartCascade[lastIndexCascadeArray].cascadePercent = cascadePercents[lastIndexCascadeArray-1];
+    }
+    else{
+      cascadePercent = cascadePercents[cascadePercents.length-1];
+      cartCascade[cascadePercents.length].cascadePercent = cascadePercents[cascadePercents.length-1];
+    }
+    console.log("cascadePercent ", cascadePercent);
+  } else {
+    return { err: true, errMessage: "Нет товаров для каскада" };
+  }
+
+  var cartMapped = cartCascade.concat(cartNotCascade);
+  if (cartMapped != []) return { err: false, cart: cartMapped, errMessage: "" };
+  else {
+    return { err: true, errMessage: "Something wrong" };
+  }
 }
-async function dbCheck(article) {
+ async function dbCheckExistCascade(article) {
   var resulCheck;
-  await dbQuerie.productExistCascade(article, (result) => {
-    resulCheck = result;
-  });
-  return resulCheck;
+  try {
+     await dbQuerie.productExistCascade(article, (result) => {
+      // console.log("productExistCascade ", result )
+      resulCheck = result;
+    });
+  } catch (error) {
+    return error;
+  }
+  return resulCheck[0];
 }
+
 module.exports = {
   checkCart,
 };
