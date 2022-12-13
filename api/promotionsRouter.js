@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const SimpleNodeLogger = require("simple-node-logger");
 const promotionsFunctions = require("./promotionsFunctions");
+const promotionsCheckCart = require("./promotionsCheckCart");
 const dbQuerie=require('../database/dbQuerie')
 
 opts = {
@@ -65,16 +66,15 @@ router.post("/post-promotion", async (req, res) => {
 //check if productexsist in cascade
 router.post("/check-product-exist", async (req, res) => {
   try {
-
     if (req.body) {
       // const result = await dbQuerie.productExistCascade(req.body.article);
       var resulCheck
-      await dbQuerie.productExistCascade(req.body.article, (result) => {
+      await dbQuerie.productExistCascade(req.body.article,async  (result) => {
         log.info(
           "POST result /check-product-exist for promotions ",
-          result
+          resulCheck = result,
+          console.log(" result ", result)
         );
-        resulCheck = result
       }); 
       res.json({ resulCheck });
     }
@@ -85,14 +85,15 @@ router.post("/check-product-exist", async (req, res) => {
 });
 //check cart for promotions
 router.post("/check-cart", async (req, res) => {
+  // console.log("your data is ", req.body)
   try {
-
     if (req.body) {
-      const result = await promotionsFunctions.setPromotion(req.body.cart);
+      // const result= {"status":"shmatus"};
+      const result = await promotionsCheckCart.checkCart(req.body.cart);
       res.json({ result });
     }
   } catch (err) {
-    log.info("/post-promotions error: " + err);
+    log.info("/check-cart error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
