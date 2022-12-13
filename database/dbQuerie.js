@@ -77,26 +77,6 @@ module.exports = {
             callback(undefined)
         })
     },
-    // productExistCascade2: async (articles, callback) => {
-    //         let products = []            
-    //         for(var i in articles){
-    //             await knex('promotions')
-    //             .where({active:true, type:'cascade'})
-    //             .whereJsonObject('products',  [articles[i]] )
-    //             .select('promotion_id')
-    //             .then( (response) => {
-    //                 console.log("response ", response)
-    //                 if(Array.isArray(response) && response.length!=0)
-    //                 {products.push(articles[i])}
-    //                 console.log("products ", products)
-    //             })from string
-    //             .catch((err) => {
-    //                 console.log(err)
-    //             })                
-    //         }
-    //         console.log("callback(products) ", products)
-    //         callback(products)
-    //     },
     percentsCascade: async (doc_number, callback) => {
         await knex('promotions')
         .where('doc_number', doc_number)
