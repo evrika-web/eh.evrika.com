@@ -51,27 +51,27 @@ async function checkCart(cart) {
           });
         }
 
-        var checkProductDublIndex;
-        var checkProductDubl = cartCascade.some(
+        var checkProductDublicateIndex;
+        var checkProductDublicate = cartCascade.some(
           (x) => x.article == cartSorted[cartObj].article
         );
-        console.log("checkProductDubl ", checkProductDubl);
+        console.log("checkProductDublicate ", checkProductDublicate);
 
-        if (checkProductDubl) {
+        if (checkProductDublicate) {
           cartCascade.some((x, i) => {
             x.article == cartSorted[i].article;
-            checkProductDublIndex = i;
+            checkProductDublicateIndex = i;
           });
         }
-        console.log("checkProductDublIndex ", checkProductDublIndex);
+        console.log("checkProductDublicateIndex ", checkProductDublicateIndex);
         var tempObj = {
           category: cartSorted[cartObj].category,
           count: 1,
         };
-        if (checkProductDubl) {
+        if (checkProductDublicate) {
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
-          cartCascade.splice(checkProductDublIndex, 1);
+          cartCascade.splice(checkProductDublicateIndex, 1);
           console.log(
             "Количество товаров больше 1 ",
             cartSorted[cartObj].article
