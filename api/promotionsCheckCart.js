@@ -31,7 +31,6 @@ async function checkCart(cart) {
     var resultCheckExist = await dbCheckExistCascade(cartSorted[cartObj].article);
     // console.log("resultCheckExist ", resultCheckExist);
     if (resultCheckExist == undefined || resultCheckExist == []) {
-      cartSorted[cartObj].cascadeNumber = "";
       cartSorted[cartObj].cascade = false;
       cartNotCascade.push(cartSorted[cartObj]);
       console.log("Товара нет в каскадах ", cartSorted[cartObj].article);
@@ -64,6 +63,7 @@ async function checkCart(cart) {
 
         if (categoriesCount == [] || !checkCategory) {
           cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
           cartCascade.push(cartSorted[cartObj]);
@@ -71,17 +71,16 @@ async function checkCart(cart) {
         } else if (checkCategory && categoriesCount[categoryIndex].count < 2 ) {
           // console.log( "2 if cartCascade ", cartCascade)
           cartSorted[cartObj].cascadeNumber = resultCheckExist.doc_number;
+          cartSorted[cartObj].salePrice = cartSorted[cartObj].price;;
           cartSorted[cartObj].cascade = true;
           categoriesCount[categoryIndex].count += 1;
           cartCascade.push(cartSorted[cartObj]);
         }
         else{
-          cartSorted[cartObj].cascadeNumber = "";
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
         }
       } else {
-        cartSorted[cartObj].cascadeNumber = "";
         cartSorted[cartObj].cascade = false;
         cartNotCascade.push(cartSorted[cartObj]);
         console.log("Количество товаров больше 1 ", e.article);
