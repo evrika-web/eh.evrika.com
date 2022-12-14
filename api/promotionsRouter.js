@@ -26,7 +26,7 @@ router.get("/active-promotions", async (req, res) => {
   }
 });
 
-//add promotions from 1C to db
+//Добавление акций с 1С
 router.get("/add-promotions-from-1c", async (req, res) => {
   try {
     var promo1C = await promotionsFunctions.getPromotionsfrom1C();
@@ -38,7 +38,7 @@ router.get("/add-promotions-from-1c", async (req, res) => {
   }
 });
 
-//check activity of promotions start, end date
+//Проверка на активность акции (Старт акции, конец акции)
 router.get("/check-promotions-activity", async (req, res) => {
   try {
     var checkPromo = await promotionsFunctions.checkPromotionsActivity();   
@@ -49,7 +49,7 @@ router.get("/check-promotions-activity", async (req, res) => {
   }  
 });
 
-//post promotions to db
+//Добавление акции в БД
 router.post("/post-promotion", async (req, res) => {
   try {
 
@@ -63,7 +63,7 @@ router.post("/post-promotion", async (req, res) => {
   }
 });
 
-//check if productexsist in cascade
+//Проверка на наличие товара в каскадах
 router.post("/check-product-exist", async (req, res) => {
   try {
     if (req.body) {
@@ -83,18 +83,30 @@ router.post("/check-product-exist", async (req, res) => {
     res.status(404).send({ error: err.toString() });
   }
 });
-//check cart for promotions
+
+//проверка корзины на наличие акции каскад
 router.post("/check-cart", async (req, res) => {
-  // console.log("your data is ", req.body)
   try {
     if (req.body) {
-      // const result= {"status":"shmatus"};
       const result = await promotionsCheckCart.checkCart(req.body.cart);
-      res.json({ result });
+      if(result.err==false && result.cascadeCart){
+        res.status(200).send({ cascadeCart: result.cascadeCart ,cart:result.cart });
+      }
+      else if(result.err==true && result.errMessage=="Something went wrong" ){
+        log.info("/check-cart error: " + result.errMessage);
+        res.status(404).send({ cascadeCart: false, message: result.errMessage });
+      }
+      else if(result.err==true ){
+        res.status(200).send({ cascadeCart: false, cart:result.cart, message: result.errMessage });
+      }
+      else{
+        res.status(200).send({ cascadeCart: result.cascadeCart ,cart:result.cart });
+      }
     }
   } catch (err) {
     log.info("/check-cart error: " + err);
-    res.status(404).send({ error: err.toString() });
+    res.status(404).send({ cascadeCart: false, message: err.toString() });
   }
 });
+
 module.exports = router;

@@ -2,6 +2,8 @@ const knex = require('./knex')
 const moment = require('moment')
 
 module.exports = {
+
+    //Отправка акции в БД
     createPromotionData: async (data, callback) => {
         await knex('promotions')
         .insert(data, "*")
@@ -13,6 +15,8 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    // Получение данных по активным акциям
     getActivePromotions:async (callback) => {
         await knex('promotions')
         .where({active:1})
@@ -25,6 +29,8 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    //Получение номера документа активных акций
     getActivePromotionsID: async (callback) => {
          await knex('promotions')
         .where({active:1})
@@ -37,6 +43,8 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    //Проверка окончания акции по дате
     checkPromotionsEnd: async (callback) => {
         await knex('promotions')
         .where('end_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
@@ -50,6 +58,8 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    //Проверка начала акции по дате
     checkPromotionStart: async (callback) => {
         await knex('promotions')
         .where('start_date', '<',moment().format("YYYY-MM-DD HH:mm:ss"))
@@ -64,9 +74,11 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    //Проверка на наличие товаров в каскадах
     productExistCascade: async (articles, callback) => {
         await knex('promotions')
-        .where({active: true, type:'cascade' })
+        .where({active: true, type:'cascade', participate: true })
         .whereJsonObject('products',  [articles] )
         .select('doc_number')
         .then( (response) => {
@@ -77,6 +89,8 @@ module.exports = {
             callback(undefined)
         })
     },
+
+    //Получение процентов по каскаду
     percentsCascade: async (doc_number, callback) => {
         await knex('promotions')
         .where('doc_number', doc_number)

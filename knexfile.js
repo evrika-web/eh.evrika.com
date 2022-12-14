@@ -7,6 +7,7 @@
 require('dotenv').config();
 module.exports = {
 
+  //Тестовое подключение к БД
   development: {
     client: 'mysql',
     connection: {
@@ -26,6 +27,7 @@ module.exports = {
     useNullAsDefault: true
   },
 
+  //Боевое подключение к БД
   production: {
     client: 'mysql',
     connection: {

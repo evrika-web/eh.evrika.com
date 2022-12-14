@@ -10,6 +10,7 @@ opts = {
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
+
 //Данные для запроса в 1С
 const url1CPromotions = process.env.URL_1C_PROMOTIONS;
 let data1CPromotions = {
@@ -24,6 +25,7 @@ let config1CPromotions = {
     },
   },
 };
+
 //Получение данных по акциям с 1Ски
 async function getPromotionsfrom1C() {
   const result = await axios
@@ -37,6 +39,7 @@ async function getPromotionsfrom1C() {
     });
   return result;
 }
+
 //маппинг и проверка данных для загрузки в бд
 async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
   try {
@@ -80,6 +83,7 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
     return err;
   }
 }
+
 //отправка акций в бд
 async function setPromotion(promo) {
   try {
@@ -126,6 +130,7 @@ async function setPromotion(promo) {
     return err;
   }
 }
+
 //Проверка на активность акций
 async function checkPromotionsActivity() {
   try {
@@ -147,6 +152,7 @@ async function checkPromotionsActivity() {
     return err;
   }
 }
+
 //Получение активных акций all data /only id
 async function getActivePromotions(type) {
   try {

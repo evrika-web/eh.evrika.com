@@ -12,7 +12,7 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-//schedules
+//Проверка по установленному времени на наличие новых акций
 schedule.scheduleJob({ hour: 15, minute: 52 }, async () => {
   log.info(
     moment().format("HH:mm DD-MM-YYYY"),
@@ -28,6 +28,7 @@ schedule.scheduleJob({ hour: 15, minute: 52 }, async () => {
   }
 });
 
+//Проверка по установленному времени на активность акций (старт акции, окончание акции)
 schedule.scheduleJob({ hour: 15, minute: 51 }, async () => {
   log.info(
     moment().format("HH:mm DD-MM-YYYY"),
