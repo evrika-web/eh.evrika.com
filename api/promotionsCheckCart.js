@@ -39,6 +39,7 @@ async function checkCart(cart) {
       // console.log("cartNotCascade ", cartNotCascade);
     } else {
       if (cartSorted[cartObj].quantity <= 1) {
+        
         var categoryIndex;
         var checkCategory = categoriesCount.some(
           (x) => x.category == cartSorted[cartObj].category
@@ -55,7 +56,6 @@ async function checkCart(cart) {
         var checkProductDublicate = cartCascade.some(
           (x) => x.article == cartSorted[cartObj].article
         );
-        console.log("checkProductDublicate ", checkProductDublicate);
 
         if (checkProductDublicate) {
           cartCascade.some((x, i) => {
@@ -63,7 +63,31 @@ async function checkCart(cart) {
             checkProductDublicateIndex = i;
           });
         }
-        console.log("checkProductDublicateIndex ", checkProductDublicateIndex);
+        
+        // ToDo поставить проверку на услуги, сразу убирать из каскада
+        // ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
+        var checkPriceRangeIndex;
+        var checkPriceRange =true;
+        if(cartCascade.length !=0){
+
+          checkPriceRange = cartCascade.some(
+            (x) => Math.abs(x.price - cartSorted[cartObj].price) > 10
+          );
+          console.log("checkPriceRange ", checkPriceRange);
+
+        }
+        else{
+          checkPriceRange = true
+        }
+
+        if (checkPriceRange) {
+          cartCascade.some((x, i) => {
+            x.article == cartSorted[i].article;
+            checkPriceRangeIndex = i;
+          });
+        }
+        console.log("checkPriceRangeIndex ", checkPriceRangeIndex);
+
         var tempObj = {
           category: cartSorted[cartObj].category,
           count: 1,
@@ -76,15 +100,18 @@ async function checkCart(cart) {
             "Количество товаров больше 1 ",
             cartSorted[cartObj].article
           );
-        } else if (categoriesCount == [] || !checkCategory) {
+        } else if ((categoriesCount == [] && checkPriceRange) || (!checkCategory && checkPriceRange)) {
           cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
           cartCascade.push(cartSorted[cartObj]);
-          // console.log( "1 if cartCascade ", cartCascade)
-        } else if (checkCategory && categoriesCount[categoryIndex].count < 2) {
-          // console.log( "2 if cartCascade ", cartCascade)
+          // console.log("1 if cartCascade ", cartCascade);
+        } else if (
+          checkCategory &&
+          categoriesCount[categoryIndex].count < 2 && checkPriceRange
+        ) {
+          // console.log("2 if cartCascade ", cartCascade);
           cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
@@ -104,34 +131,33 @@ async function checkCart(cart) {
       }
     }
   }
-  if(cartCascade.length == 1){
+  // console.log("cartCascade ", cartCascade);
+  if (cartCascade.length == 1) {
     cartCascade[0].cascade = false;
-    delete cartCascade[0].docNumber
-    delete cartCascade[0].salePrice
+    delete cartCascade[0].docNumber;
+    delete cartCascade[0].salePrice;
     cartNotCascade.push(cartCascade[0]);
     cartCascade.splice(0, 1);
     console.log(
       "Количество товаров участвующих в каскаде должно быть больше 1 "
     );
-  }
-  // console.log("cartCascade ", cartCascade);
-  else if (cartCascade.length > 1) {
+  } else if (cartCascade.length > 1) {
     try {
       var cascadePercents;
       await dbQuerie.percentsCascade(cartCascade[0].docNumber, (result) => {
-        // console.log("percentsCascade ", result )
-        if (Array.isArray(result) && result != [])
+        // console.log("percentsCascade ", result);
+        if (Array.isArray(result) && result != []) {
           cascadePercents = JSON.parse(result[0].cascadePercents);
-        else {
+        } else {
           cascadePercents = [25, 50, 75];
         }
       });
     } catch (error) {
       console.log("error percentsCascade", error);
     }
-    console.log("cascadePercents ", cascadePercents);
+    // console.log("cascadePercents ", cascadePercents);
     var lastIndexCascadeArray = cartCascade.length - 1;
-    console.log("lastIndexCascadeArray ", lastIndexCascadeArray);
+    // console.log("lastIndexCascadeArray ", lastIndexCascadeArray);
     // console.log("docNumber ",cartCascade);
     var cascadePercent = 20;
     if (cascadePercents.length >= lastIndexCascadeArray) {
@@ -143,14 +169,15 @@ async function checkCart(cart) {
       cartCascade[cascadePercents.length].cascadePercent =
         cascadePercents[cascadePercents.length - 1];
     }
-    console.log("cascadePercent ", cascadePercent);
+    // console.log("cascadePercent ", cascadePercent);
   } else {
     return { err: true, errMessage: "Нет товаров для каскада" };
   }
 
   var cartMapped = cartCascade.concat(cartNotCascade);
-  if (cartMapped != []) return { err: false, cart: cartMapped };
-  else {
+  if (cartMapped != []) {
+    return { err: false, cart: cartMapped };
+  } else {
     return { err: true, errMessage: "Something wrong" };
   }
 }
@@ -166,7 +193,21 @@ async function dbCheckExistCascade(article) {
   }
   return resulCheck[0];
 }
-
+function checkIfExist(type,array,param, searchingParam  ){
+  var indexCheck = 0
+  var checkExist = true
+  switch (type) {
+    case "exist":
+      checkExist= array.some(
+          (x) => x.param == searchingParam
+        );
+        return checkExist
+  
+    default:
+      break;
+  }
+    
+}
 module.exports = {
   checkCart,
 };
