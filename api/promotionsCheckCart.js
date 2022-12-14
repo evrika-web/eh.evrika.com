@@ -45,7 +45,14 @@ async function checkCart(cart) {
       cartSorted[cartObj].cascade = false;
       cartNotCascade.push(cartSorted[cartObj]);
       console.log("Товара нет в каскадах ", cartSorted[cartObj].unique_id);
-    } else {
+    } 
+    // Проверка на услугу, услуги не участвуют в каскадах
+    else if(cartSorted[cartObj].isService==true){
+      cartSorted[cartObj].cascade = false;
+      cartNotCascade.push(cartSorted[cartObj]);
+      console.log("Услуги не участвуют в каскадах ", cartSorted[cartObj].unique_id);
+    }  
+    else {
 
       //Проверка на количество одного товара, не должно быть больше 1
       if (cartSorted[cartObj].quantity <= 1) {
@@ -76,29 +83,18 @@ async function checkCart(cart) {
           });
         }
         
-        // ToDo поставить проверку на услуги, сразу убирать из каскада
-        // ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
-
         //Получение данных для проверки цен
-        var checkPriceRangeIndex;
         var checkPriceRange =true;
         if(cartCascade.length !=0){
-
+          
           checkPriceRange = cartCascade.some(
             (x) => Math.abs(x.price - cartSorted[cartObj].price) > 10
-          );
-
-        }
-        else{
-          checkPriceRange = true
-        }
-
-        if (checkPriceRange) {
-          cartCascade.some((x, i) => {
-            x.article == cartSorted[i].article;
-            checkPriceRangeIndex = i;
-          });
-        }
+            );
+            
+          }
+          else{
+            checkPriceRange = true
+          }
 
         //Временный объект для отправки в массив категорий
         var tempObj = {
@@ -239,3 +235,5 @@ async function dbCheckExistCascade(article) {
 module.exports = {
   checkCart,
 };
+        // ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
+        // ToDo добавить расчет скидок по товарам
