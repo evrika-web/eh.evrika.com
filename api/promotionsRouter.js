@@ -15,9 +15,21 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //get active promotions data
-router.get("/active-promotions", async (req, res) => {
+router.get("/active-promotions-data", async (req, res) => {
   try {
     var activePromotionsData = await promotionsFunctions.getActivePromotions('data');
+    console.log(activePromotionsData);
+    res.json({activePromotionsData}) ;
+  } catch (err) {
+    log.info("/promotions error: " + err);
+    res.status(404).send({ error: err.toString() });
+  }
+});
+
+//get active promotions id
+router.get("/active-promotions-id", async (req, res) => {
+  try {
+    var activePromotionsData = await promotionsFunctions.getActivePromotions('id');
     console.log(activePromotionsData);
     res.json({activePromotionsData}) ;
   } catch (err) {
