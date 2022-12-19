@@ -7,6 +7,64 @@ module.exports = {
     await knex("promotions")
       .insert(data, "*")
       .then((update) => {
+        var disablePromo = [];
+        data.forEach(async (element) => {
+          switch (element.type) {
+            case "cascade":
+              await knex("promotions")
+                .whereNot("doc_number", element.doc_number)
+                .andWhere("type", "cascade")
+                .update({
+                  type: "cascade-old",
+                  active: false,
+                  updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                })
+                .then((updateCascade) => {
+                  disablePromo.push(updateCascade);
+                })
+                .catch((err) => {
+                  console.log(err);
+                  callback(undefined);
+                });
+              break;
+            case "coupon":
+              await knex("promotions")
+                .whereNot("doc_number", element.doc_number)
+                .andWhere("type", "coupon")
+                .update({
+                  type: "coupon-old",
+                  active: false,
+                  updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                })
+                .then((updateCoupon) => {
+                  disablePromo.push(updateCoupon);
+                })
+                .catch((err) => {
+                  console.log(err);
+                  callback(undefined);
+                });
+              break;
+            case "promocode":
+              await knex("promotions")
+                .whereNot("doc_number", element.doc_number)
+                .andWhere("type", "promocode")
+                .update({
+                  type: "promocode-old",
+                  active: false,
+                  updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                })
+                .then((updateCoupon) => {
+                  disablePromo.push(updateCoupon);
+                })
+                .catch((err) => {
+                  console.log(err);
+                  callback(undefined);
+                });
+              break;
+            default:
+              break;
+          }
+        });
         callback(update);
       })
       .catch((err) => {
@@ -33,7 +91,7 @@ module.exports = {
   getActivePromotionsID: async (callback) => {
     await knex("promotions")
       .where({ active: 1 })
-      .select("doc_number","type")
+      .select("doc_number", "type")
       .then((response) => {
         callback(response);
       })
@@ -110,20 +168,20 @@ module.exports = {
   },
 
   //Снятие с активного значения акции
-//   checkPromotionsEnd: async (callback) => {
-//     await knex("promotions")
-//       .where("end_date", "<", moment().format("YYYY-MM-DD HH:mm:ss"))
-//       .andWhere("active", true)
-//       .update({
-//         active: false,
-//         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
-//       })
-//       .then((update) => {
-//         callback(update);
-//       })
-//       .catch((err) => {
-//         console.log(err);
-//         callback(undefined);
-//       });
-//   },
+  //   checkPromotionsEnd: async (callback) => {
+  //     await knex("promotions")
+  //       .where("end_date", "<", moment().format("YYYY-MM-DD HH:mm:ss"))
+  //       .andWhere("active", true)
+  //       .update({
+  //         active: false,
+  //         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+  //       })
+  //       .then((update) => {
+  //         callback(update);
+  //       })
+  //       .catch((err) => {
+  //         console.log(err);
+  //         callback(undefined);
+  //       });
+  //   },
 };
