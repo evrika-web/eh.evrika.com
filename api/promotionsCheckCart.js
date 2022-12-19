@@ -244,7 +244,7 @@ async function checkCart(cart) {
     });
     
     var salePercentForAllProducts = totalDiscount / overallSum;
-    var salePercentForAllProductsToFixed2=salePercentForAllProducts.toFixed(2);
+    var salePercentForAllProductsToFixed2=Number(salePercentForAllProducts.toFixed(2));
     if(salePercentForAllProductsToFixed2<salePercentForAllProducts){
       salePercentForAllProductsToFixed2 += 0.01;
     }
@@ -294,4 +294,3 @@ module.exports = {
   checkCart,
 };
 // ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
-// ToDo добавить расчет скидок по товарам
