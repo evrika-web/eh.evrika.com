@@ -42,6 +42,7 @@ router.get("/active-promotions-id", async (req, res) => {
 router.get("/add-promotions-from-1c", async (req, res) => {
   try {
     var promo1C = await promotionsFunctions.getPromotionsfrom1C();
+    
     var postPromo = await promotionsFunctions.setPromotion(promo1C);
     res.send(postPromo);
   } catch (err) {
@@ -75,7 +76,7 @@ router.post("/post-promotion", async (req, res) => {
   }
 });
 
-//Проверка на наличие товара в каскадах
+//Проверка на наличие товара в каскадных исключениях
 router.post("/check-product-exist", async (req, res) => {
   try {
     if (req.body) {
