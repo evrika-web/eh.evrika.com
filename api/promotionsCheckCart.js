@@ -11,12 +11,11 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function checkCart(cart) {
-
   // Проверка на кол-во товаров, должно быть больше 1
   if (cart.length < 2) {
     console.log("Для каскадов нужно минимум два разных товаров");
-    cart.forEach(element => {
-      element.cascade = false
+    cart.forEach((element) => {
+      element.cascade = false;
     });
     return {
       err: true,
@@ -33,30 +32,39 @@ async function checkCart(cart) {
     return b.price - a.price;
   });
 
-  for (var cartObj in cartSorted) {
+  //получение номера документа активного каскада
+  var docNumberActiceCascade = "";
+  await dbQuerie.getActivePromotionsID((promotionsIDs) => {
+    promotionsIDs.map((e, i) => {
+      if (e.type == "cascade") {
+        docNumberActiceCascade = e.doc_number;
+      }
+    });
+  });
 
-    //вызов функции для проверки наличия товара в каскадах
+  for (var cartObj in cartSorted) {
+    //вызов функции для проверки наличия товара в исключениях каскада
     var resultCheckExist = await dbCheckExistCascade(
       cartSorted[cartObj].article
     );
 
     //Проверка на наличие товара в каскадах
-    if (resultCheckExist == undefined || resultCheckExist == []) {
+    if (resultCheckExist == undefined || resultCheckExist == false) {
       cartSorted[cartObj].cascade = false;
       cartNotCascade.push(cartSorted[cartObj]);
-      console.log("Товара нет в каскадах ", cartSorted[cartObj].unique_id);
-    } 
+      console.log("Товар в исключении каскада ", cartSorted[cartObj].unique_id);
+    }
     // Проверка на услугу, услуги не участвуют в каскадах
-    else if(cartSorted[cartObj].isService==true){
+    else if (cartSorted[cartObj].isService == true) {
       cartSorted[cartObj].cascade = false;
       cartNotCascade.push(cartSorted[cartObj]);
-      console.log("Услуги не участвуют в каскадах ", cartSorted[cartObj].unique_id);
-    }  
-    else {
-
+      console.log(
+        "Услуги не участвуют в каскадах ",
+        cartSorted[cartObj].unique_id
+      );
+    } else {
       //Проверка на количество одного товара, не должно быть больше 1
       if (cartSorted[cartObj].quantity <= 1) {
-
         //Получение данных для проверки категорий
         var categoryIndex;
         var checkCategory = categoriesCount.some(
@@ -82,19 +90,16 @@ async function checkCart(cart) {
             checkProductDublicateIndex = i;
           });
         }
-        
+
         //Получение данных для проверки цен
-        var checkPriceRange =true;
-        if(cartCascade.length !=0){
-          
+        var checkPriceRange = true;
+        if (cartCascade.length != 0) {
           checkPriceRange = cartCascade.some(
             (x) => Math.abs(x.price - cartSorted[cartObj].price) > 10
-            );
-            
-          }
-          else{
-            checkPriceRange = true
-          }
+          );
+        } else {
+          checkPriceRange = true;
+        }
 
         //Временный объект для отправки в массив категорий
         var tempObj = {
@@ -106,47 +111,55 @@ async function checkCart(cart) {
         if (checkProductDublicate) {
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
-          delete cartSorted[checkProductDublicateIndex].docNumber
-          delete cartSorted[checkProductDublicateIndex].salePrice
+          delete cartSorted[checkProductDublicateIndex].docNumber;
+          delete cartSorted[checkProductDublicateIndex].salePrice;
           cartSorted[checkProductDublicateIndex].cascade = false;
-          cartNotCascade.push(cartSorted[checkProductDublicateIndex])
+          cartNotCascade.push(cartSorted[checkProductDublicateIndex]);
           cartCascade.splice(checkProductDublicateIndex, 1);
           console.log(
             "Обнаружен дубль товара в корзине ",
             cartSorted[cartObj].unique_id
           );
-        } 
+        }
 
         //Проверка на кол-во категорий (если это первый товар в проверке), разницы цены (должно быть больше 10)
-        else if ((categoriesCount == [] && checkPriceRange) || (!checkCategory && checkPriceRange)) {
-          cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
+        else if (
+          (categoriesCount == [] && checkPriceRange) ||
+          (!checkCategory && checkPriceRange)
+        ) {
+          cartSorted[cartObj].docNumber = docNumberActiceCascade;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
           cartCascade.push(cartSorted[cartObj]);
-        } 
-        
+        }
+
         //Проверка на кол-во категорий (должно быть не больше 2 товаров с одной категории), разницы цены (должно быть больше 10)
-        else if (checkCategory && categoriesCount[categoryIndex].count < 2 && checkPriceRange) {
-          cartSorted[cartObj].docNumber = resultCheckExist.doc_number;
+        else if (
+          checkCategory &&
+          categoriesCount[categoryIndex].count < 2 &&
+          checkPriceRange
+        ) {
+          cartSorted[cartObj].docNumber = docNumberActiceCascade;
           cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount[categoryIndex].count += 1;
           cartCascade.push(cartSorted[cartObj]);
-        } 
+        }
 
         //Все что не прошло проверку цены отправляем в массив не каскадов
-        else if(checkPriceRange==false){
-          console.log("Товар не прошел проверку цены ", cartSorted[cartObj].unique_id)
+        else if (checkPriceRange == false) {
+          console.log(
+            "Товар не прошел проверку цены ",
+            cartSorted[cartObj].unique_id
+          );
+          cartSorted[cartObj].cascade = false;
+          cartNotCascade.push(cartSorted[cartObj]);
+        } else {
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
         }
-        else {
-          cartSorted[cartObj].cascade = false;
-          cartNotCascade.push(cartSorted[cartObj]);
-        }
-      } 
-      else {
+      } else {
         cartSorted[cartObj].cascade = false;
         cartNotCascade.push(cartSorted[cartObj]);
         console.log(
@@ -157,7 +170,7 @@ async function checkCart(cart) {
     }
   }
 
-  var cascadeCart = true
+  var cascadeCart = true;
 
   //Проверка если кол-во товаров в каскаде = 1 (Должно быть больше 1 )
   if (cartCascade.length == 1) {
@@ -169,14 +182,18 @@ async function checkCart(cart) {
     console.log(
       "Количество товаров участвующих в каскаде должно быть больше 1"
     );
-    cascadeCart = false
-    return { err: true ,cascadeCart,cart: cartNotCascade, errMessage: "Количество товаров участвующих в каскаде должно быть больше 1" };
-
-  } 
+    cascadeCart = false;
+    return {
+      err: true,
+      cascadeCart,
+      cart: cartNotCascade,
+      errMessage:
+        "Количество товаров участвующих в каскаде должно быть больше 1",
+    };
+  }
 
   // Если товаров в каскадах больше одного
   else if (cartCascade.length > 1) {
-
     // Получение процентов каскада
     try {
       var cascadePercents;
@@ -184,7 +201,7 @@ async function checkCart(cart) {
         if (Array.isArray(result) && result != []) {
           cascadePercents = JSON.parse(result[0].cascadePercents);
         }
-        //Если вышла ошибка берем стандартные проценты каскада 
+        //Если вышла ошибка берем стандартные проценты каскада
         else {
           cascadePercents = [25, 50, 75];
         }
@@ -196,44 +213,85 @@ async function checkCart(cart) {
     // Поиск последнего товара в каскадах для приравнивания скидки
     var lastIndexCascadeArray = cartCascade.length - 1;
     var cascadePercent = 20;
-    if (cascadePercents.length >= lastIndexCascadeArray) {
+    var totalDiscount = 0;
+    if (cascadePercents.length >= cartCascade.length) {
       cascadePercent = cascadePercents[lastIndexCascadeArray - 1];
       cartCascade[lastIndexCascadeArray].cascadePercent =
         cascadePercents[lastIndexCascadeArray - 1];
+      totalDiscount = cartCascade[lastIndexCascadeArray].price * (cascadePercent);
     } else {
       cascadePercent = cascadePercents[cascadePercents.length - 1];
       cartCascade[cascadePercents.length].cascadePercent =
-        cascadePercents[cascadePercents.length - 1];
+      cascadePercents[cascadePercents.length-1];
+      totalDiscount = cartCascade[cascadePercents.length].price * cascadePercent;
+    
+      for (var i = lastIndexCascadeArray; i > cascadePercents.length ; i--) {
+        cartCascade[i].cascade = false;
+        delete cartCascade[i].docNumber;
+        delete cartCascade[i].salePrice;
+        cartNotCascade.push(cartCascade[i]);
+        console.log(
+          "Убираем товар который не вошел в расчет скидки каскада",
+          cartCascade[i].unique_id
+        );
+        cartCascade.splice(i, 1);
+      }
     }
+    // Вычисления скидки для всех товаров каскада
+    var overallSum=0
+    cartCascade.forEach(element => {
+      overallSum += element.price
+    });
+    
+    var salePercentForAllProducts = totalDiscount / overallSum;
+    var salePercentForAllProductsToFixed2=salePercentForAllProducts.toFixed(2);
+    if(salePercentForAllProductsToFixed2<salePercentForAllProducts){
+      salePercentForAllProductsToFixed2 += 0.01;
+    }
+    cartCascade.forEach(element => {
+      var saleForProduct= Number((element.price*(salePercentForAllProductsToFixed2/100)).toFixed(2));
+      element.salePrice -= saleForProduct;
+      element.appliedPercent = salePercentForAllProductsToFixed2;
+      element.sum = element.salePrice * element.quantity;
+    });
   } else {
-    cascadeCart = false
-    return { err: false,cascadeCart,cart:cartNotCascade, errMessage: "Нет товаров для каскада" };
+    cascadeCart = false;
+    return {
+      err: false,
+      cascadeCart,
+      cart: cartNotCascade,
+      errMessage: "Нет товаров для каскада",
+    };
   }
 
   // Соединяем массив каскадов с массивом не каскадов для отправки результата
   var cartMapped = cartCascade.concat(cartNotCascade);
   if (cartMapped != []) {
-    cascadeCart =true
-    return { err: false,cascadeCart, cart: cartMapped };
+    cascadeCart = true;
+    return { err: false, cascadeCart, cart: cartMapped };
   } else {
     return { err: true, errMessage: "Something went wrong" };
   }
 }
 
-//запрос в БД для проверки наличия товара в каскадах 
+//запрос в БД для проверки наличия товара в каскадах
 async function dbCheckExistCascade(article) {
-  var resulCheck;
+  var resulCheck = false;
   try {
     await dbQuerie.productExistCascade(article, (result) => {
-      resulCheck = result;
+      if (result.length == 0) {
+        resulCheck = true;
+      } else {
+        resulCheck = false;
+      }
     });
   } catch (error) {
     return error;
   }
-  return resulCheck[0];
+  return resulCheck;
 }
 module.exports = {
   checkCart,
 };
-        // ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
-        // ToDo добавить расчет скидок по товарам
+// ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
+// ToDo добавить расчет скидок по товарам
