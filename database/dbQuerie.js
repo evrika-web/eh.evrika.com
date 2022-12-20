@@ -154,9 +154,9 @@ module.exports = {
   },
 
   //Получение процентов по каскаду
-  percentsCascade: async (doc_number, callback) => {
+  percentsCascade: async (doc_number_data, callback) => {
     await knex("promotions")
-      .where("doc_number", doc_number)
+      .where({doc_number: doc_number_data, type:"cascade"})
       .jsonExtract("percents", "$", "cascadePercents")
       .then((response) => {
         callback(response);
@@ -166,22 +166,4 @@ module.exports = {
         callback(undefined);
       });
   },
-
-  //Снятие с активного значения акции
-  //   checkPromotionsEnd: async (callback) => {
-  //     await knex("promotions")
-  //       .where("end_date", "<", moment().format("YYYY-MM-DD HH:mm:ss"))
-  //       .andWhere("active", true)
-  //       .update({
-  //         active: false,
-  //         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
-  //       })
-  //       .then((update) => {
-  //         callback(update);
-  //       })
-  //       .catch((err) => {
-  //         console.log(err);
-  //         callback(undefined);
-  //       });
-  //   },
 };
