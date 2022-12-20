@@ -299,4 +299,4 @@ async function dbCheckExistCascade(article) {
 module.exports = {
   checkCart,
 };
-// ToDo поменять проверку на активность, при получении нового каскада с 1С убирать все остальные
+// ToDo отправлять в ответ вместо индекса массива unique_id
