@@ -56,7 +56,7 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
       if (dataOld[i].ДатаОкончания < currDate) continue;
       var active = false;
       if (dataOld[i].ДатаНачала < currDate) active = true;
-      var participateCascade = true;
+      var participateCascade = false;
       var cascadePercent = [];
       if (dataOld[i].Участвуют !== undefined)
         participateCascade = dataOld[i].Участвуют;
@@ -134,15 +134,15 @@ async function setPromotion(promo) {
 //Проверка на активность акций
 async function checkPromotionsActivity() {
   try {
-    await dbQuerie.checkPromotionsEnd((updatedPromotions) => {
-      log.info(
-        "GET result /check-promotions-activity for promotions end",
-        updatedPromotions
-      );
-    });
     await dbQuerie.checkPromotionStart((updatedPromotions) => {
       log.info(
         "GET result /check-promotions-activity for promotions start",
+        updatedPromotions
+      );
+    });
+    await dbQuerie.checkPromotionsEnd((updatedPromotions) => {
+      log.info(
+        "GET result /check-promotions-activity for promotions end",
         updatedPromotions
       );
     });
