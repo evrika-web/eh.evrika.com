@@ -106,6 +106,8 @@ module.exports = {
     await knex("promotions")
       .where("end_date", "<", moment().format("YYYY-MM-DD HH:mm:ss"))
       .andWhere("active", true)
+      .orWhere("type","cascade-old")
+      .orWhere("type","coupon-old")
       .update({
         active: false,
         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
@@ -124,7 +126,9 @@ module.exports = {
     await knex("promotions")
       .where("start_date", "<", moment().format("YYYY-MM-DD HH:mm:ss"))
       .where("end_date", ">", moment().format("YYYY-MM-DD HH:mm:ss"))
-      .where("active", false)
+      .andWhere({active: false})
+      .whereNot({type:"cascade-old"})
+      .whereNot({type:"coupon-old"})
       .update({
         active: true,
         updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
