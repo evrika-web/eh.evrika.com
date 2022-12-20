@@ -250,8 +250,8 @@ async function checkCart(cart) {
     }
     cartCascade.forEach(element => {
       var saleForProduct= Number((element.price*(salePercentForAllProductsToFixed2/100)).toFixed(2));
-      element.salePrice -= saleForProduct;
-      element.appliedPercent = salePercentForAllProductsToFixed2;
+      element.salePrice = Number((element.salePrice - saleForProduct).toFixed(0));
+      element.appliedPercent = Number(salePercentForAllProductsToFixed2.toFixed(2));
       element.sum = element.salePrice * element.quantity;
     });
   } else {
@@ -266,7 +266,13 @@ async function checkCart(cart) {
 
   // Соединяем массив каскадов с массивом не каскадов для отправки результата
   var cartMapped = cartCascade.concat(cartNotCascade);
+  // var cartMappedWithIndexes = []
   if (cartMapped != []) {
+    // cartMapped.forEach((e,i) => {
+    //   cartMappedWithIndexes[e.unique_id]=e
+    // });
+    // console.log("cartMappedWithIndexes ", cartMappedWithIndexes)
+    // console.log("cartMapped ", cartMapped.entries())
     cascadeCart = true;
     return { err: false, cascadeCart, cart: cartMapped };
   } else {
