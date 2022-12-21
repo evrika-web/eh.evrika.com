@@ -34,7 +34,7 @@ async function getPromotionsfrom1C() {
       return response.data.Акции;
     })
     .catch(function (error) {
-      log.info(`Response 1C: ` + error);
+      log.error(`Response 1C: ` + error);
       return error;
     });
   return result;
@@ -79,7 +79,7 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
     }
     return responseData;
   } catch (err) {
-    log.info("promotionsMapping " + err);
+    log.error("promotionsMapping " + err);
     return err;
   }
 }
@@ -126,7 +126,7 @@ async function setPromotion(promo) {
       return 'Акции обновлены, последний добавленный id: ' + resulInsert;
     }
   } catch (err) {
-    log.info("DBinsert " + err);
+    log.error("DBinsert " + err);
     return err;
   }
 }
@@ -148,7 +148,7 @@ async function checkPromotionsActivity() {
     });
     return "All promotions is up to date";
   } catch (err) {
-    log.info("Check prmotions activity err " + err);
+    log.error("Check prmotions activity err " + err);
     return err;
   }
 }
@@ -172,7 +172,7 @@ async function getActivePromotions(type) {
     }
     return resultData;
   } catch (err) {
-    log.info("Check promotions activity " + err);
+    log.error("Check promotions activity " + err);
     return err;
   }
 }

@@ -28,6 +28,6 @@ app.use('/api', promotionsRouter);
 
 //Определение порта и хоста для сервера
 app.listen(port, host, () => {
-  //log.info(`Server running on port ${port} and host ${host}`)
+  log.info(`Server running on port ${port} and host ${host}`)
   console.log(`Server running on port ${port} and host ${host}`);
 });

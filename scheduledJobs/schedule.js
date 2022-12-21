@@ -26,9 +26,9 @@ schedule.scheduleJob(ruleNewPromos, async () => {
   try {
     var promo1C = await promotionsFunctions.getPromotionsfrom1C();
     var postPromo = await promotionsFunctions.setPromotion(promo1C);
-    log.info(postPromo);
+    log.error("Time to check new Promotions From 1C error: ", postPromo);
   } catch (err) {
-    log.info(err);
+    log.error(err);
     console.log(err);
   }
 });
@@ -44,9 +44,9 @@ schedule.scheduleJob(ruleCheckDates, async () => {
   );
   try {
     var checkPromos = promotionsFunctions.checkPromotionsActivity();
-    log.info(checkPromos);
+    log.info("Time to check end|start date of promotions result: ", checkPromos);
   } catch (err) {
-    log.info("Schedule check end,start date error: ", err);
+    log.error("Time to check end|start date of promotions error: ", err);
     console.log(err);
   }
 });
@@ -74,7 +74,7 @@ schedule.scheduleJob({hour: 03}, async () => {
       });
     });
   } catch (err) {
-    log.info("deletion of old logs error: ", err);
+    log.error("deletion of old logs error: ", err);
     console.log(err);
   }
 });

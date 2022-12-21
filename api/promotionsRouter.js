@@ -22,7 +22,7 @@ router.get("/active-promotions-data", async (req, res) => {
     log.info("/active-promotions-data result: " + activePromotionsData);
     res.json({activePromotionsData}) ;
   } catch (err) {
-    log.info("/active-promotions-data error: " + err);
+    log.error("/active-promotions-data error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
@@ -35,7 +35,7 @@ router.get("/active-promotions-id", async (req, res) => {
     log.info("/active-promotions-id result: " + activePromotionsData);
     res.json({activePromotionsData}) ;
   } catch (err) {
-    log.info("/promotions error: " + err);
+    log.error("/active-promotions-id error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
@@ -49,7 +49,7 @@ router.get("/add-promotions-from-1c", async (req, res) => {
     log.info("/add-promotions-from-1c result: " + postPromo);
     res.send(postPromo);
   } catch (err) {
-    log.info("/promotions error: " + err);
+    log.error("/add-promotions-from-1c error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
@@ -61,7 +61,7 @@ router.get("/check-promotions-activity", async (req, res) => {
     log.info("/check-promotions-activity result: " + checkPromo);
     res.send(checkPromo)
   } catch (err) {
-    log.info("/promotions error: " + err);
+    log.error("/check-promotions-activity error: " + err);
     res.status(404).send({ error: err.toString() });
   }  
 });
@@ -77,7 +77,7 @@ router.post("/post-promotion", async (req, res) => {
       res.json({ result });
     }
   } catch (err) {
-    log.info("/post-promotions error: " + err);
+    log.error("/post-promotions error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
@@ -99,7 +99,7 @@ router.post("/check-product-exist", async (req, res) => {
       res.json({ resulCheck });
     }
   } catch (err) {
-    log.info("/check-product-exist error: " + err);
+    log.error("/check-product-exist error: " + err);
     res.status(404).send({ error: err.toString() });
   }
 });
@@ -115,7 +115,7 @@ router.post("/check-cart", async (req, res) => {
         res.status(200).send({ cascadeCart: result.cascadeCart, cart: result.cart });
       }
       else if(result.err==true && result.errMessage=="Something went wrong" ){
-        log.info("/check-cart error: " + result.errMessage);
+        log.error("/check-cart error: " + result.errMessage);
         res.status(404).send({ cascadeCart: false, message: result.errMessage });
       }
       else if(result.err==true ){
@@ -128,7 +128,7 @@ router.post("/check-cart", async (req, res) => {
       }
     }
   } catch (err) {
-    log.info("/check-cart error: " + err);
+    log.error("/check-cart error: " + err);
     res.status(404).send({ cascadeCart: false, message: err.toString() });
   }
 });
