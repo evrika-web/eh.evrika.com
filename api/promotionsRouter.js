@@ -103,7 +103,7 @@ router.post("/check-cart", async (req, res) => {
     if (req.body) {
       const result = await promotionsCheckCart.checkCart(req.body.cart);
       if(result.err==false && result.cascadeCart){
-        res.status(200).send({ cascadeCart: result.cascadeCart ,cart:result.cart });
+        res.status(200).send({ cascadeCart: result.cascadeCart, cart: result.cart });
       }
       else if(result.err==true && result.errMessage=="Something went wrong" ){
         log.info("/check-cart error: " + result.errMessage);
