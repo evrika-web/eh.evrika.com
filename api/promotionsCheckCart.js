@@ -266,13 +266,7 @@ async function checkCart(cart) {
 
   // Соединяем массив каскадов с массивом не каскадов для отправки результата
   var cartMapped = cartCascade.concat(cartNotCascade);
-  // var cartMappedWithIndexes = []
   if (cartMapped != []) {
-    // cartMapped.forEach((e,i) => {
-    //   cartMappedWithIndexes[e.unique_id]=e
-    // });
-    // console.log("cartMappedWithIndexes ", cartMappedWithIndexes)
-    // console.log("cartMapped ", cartMapped.entries())
     cascadeCart = true;
     return { err: false, cascadeCart, cart: cartMapped };
   } else {
@@ -299,4 +293,3 @@ async function dbCheckExistCascade(article) {
 module.exports = {
   checkCart,
 };
-// ToDo отправлять в ответ вместо индекса массива unique_id
