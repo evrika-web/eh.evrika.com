@@ -1,5 +1,6 @@
 const schedule = require("node-schedule");
 const moment = require("moment");
+const fs = require("fs");
 
 //add functions
 const promotionsFunctions = require("../api/promotionsFunctions");
@@ -13,7 +14,11 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //Проверка по установленному времени на наличие новых акций
-schedule.scheduleJob({minute: 55 }, async () => {
+var ruleNewPromos = new schedule.RecurrenceRule();
+ruleNewPromos.hour = 2;
+ruleNewPromos.minutes = 50;
+
+schedule.scheduleJob(ruleNewPromos, async () => {
   log.info(
     moment().format("HH:mm DD-MM-YYYY"),
     " Time to check new Promotions From 1C"
@@ -28,8 +33,11 @@ schedule.scheduleJob({minute: 55 }, async () => {
   }
 });
 
+var ruleCheckDates = new schedule.RecurrenceRule();
+ruleCheckDates.hour = 2;
+ruleCheckDates.minutes = 55;
 //Проверка по установленному времени на активность акций (старт акции, окончание акции)
-schedule.scheduleJob({ minute: 50 }, async () => {
+schedule.scheduleJob(ruleCheckDates, async () => {
   log.info(
     moment().format("HH:mm DD-MM-YYYY"),
     " Time to check end|start date of promotions"
@@ -39,6 +47,34 @@ schedule.scheduleJob({ minute: 50 }, async () => {
     log.info(checkPromos);
   } catch (err) {
     log.info("Schedule check end,start date error: ", err);
+    console.log(err);
+  }
+});
+
+
+//Проверка по установленному времени на старые логи
+schedule.scheduleJob({hour: 03}, async () => {
+  log.info(moment().format("HH:mm DD-MM-YYYY"), " Time to delete old logs");
+  try {
+    const dateToDelete = moment().subtract(7, "days").format("DD-MM-YYYY");
+    const fileNames = fs.readdir("logs/", (err, files) => {
+      // console.log("files ", files);
+      files.forEach((file) => {
+        var fileDate = file.slice(0, 10);
+        if (fileDate <= dateToDelete) {
+          fs.unlink(`logs/` + file, (err) => {
+            if (err) {
+              console.log("err ", err);
+              throw err;
+            } else {
+              log.info("Deleted old log ", file);
+            }
+          });
+        }
+      });
+    });
+  } catch (err) {
+    log.info("deletion of old logs error: ", err);
     console.log(err);
   }
 });
