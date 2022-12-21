@@ -57,7 +57,7 @@ schedule.scheduleJob({hour: 03}, async () => {
   log.info(moment().format("HH:mm DD-MM-YYYY"), " Time to delete old logs");
   try {
     const dateToDelete = moment().subtract(7, "days").format("DD-MM-YYYY");
-    const fileNames = fs.readdir("logs/", (err, files) => {
+    fs.readdir("logs/", (err, files) => {
       // console.log("files ", files);
       files.forEach((file) => {
         var fileDate = file.slice(0, 10);
