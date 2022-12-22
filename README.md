@@ -5,36 +5,52 @@ Express js server handler for all external services in [Evrika.com](https://evri
 - ^node js 16.0
 - ✨Magic ✨
 
+## Первый запуск проекта
 ```bash
-# Первый запуск проекта
 npm install
 ```
 
-```bash
-# Для запуска проекта
-npm run server - запускается nodemon, при каждом сохранении в файлах проект автоматически 
+## Для запуска проекта
+запускается nodemon, при каждом сохранении в файлах проект автоматически 
 перезапустит приложение
+```bash
+npm run server
 ```
 
+## Для работы с БД был использован [Knexjs](https://knexjs.org/)
+- создает файл для миграций
 ```bash
-# Для работы с БД был использован Knexjs [Документация](https://knexjs.org/)
-knex migrate:make migration_name - создает файл для миграций
-
-knex migrate:latest - обновляет БД по новым файлам миграции
-
-knex migrate:rollback - откат миграции
-
-knex migrate:up - по очередный запуск не инициализированных миграций 
-
-knex migrate:up migration_file - запускает выбранный файл миграции. 
+knex migrate:make migration_name
+```
+- обновляет БД по новым файлам миграции
+```bash
+knex migrate:latest 
+```
+- откат миграции
+```bash
+knex migrate:rollback 
+```
+- по очередный запуск не инициализированных миграций 
+```bash
+knex migrate:up 
+```
+- запускает выбранный файл миграции.
 Пример названия файла 20221130080350_create_table_promotions.js
-
-knex migrate:down - по очередная отмена последних миграций 
-
-knex migrate:down migration_file - отменяет выбранный файл миграции. 
+```bash
+knex migrate:up migration_file
+```
+- по очередная отмена последних миграций
+```bash
+knex migrate:down  
+```
+- отменяет выбранный файл миграции.
 Пример названия файла 20221130080350_create_table_promotions.js
-
-knex migrate:list - Список статусов по миграции файлов
+```bash
+knex migrate:down migration_file  
+```
+- Список статусов по миграции файлов
+```bash
+knex migrate:list 
 ```
 
 
