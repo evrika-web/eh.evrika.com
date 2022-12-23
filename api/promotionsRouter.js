@@ -19,7 +19,7 @@ router.get("/active-promotions-data", async (req, res) => {
   try {
     var activePromotionsData = await promotionsFunctions.getActivePromotions('data');
     console.log(activePromotionsData);
-    log.info("/active-promotions-data result: " + activePromotionsData);
+    log.info("/active-promotions-data result: " + JSON.stringify(activePromotionsData));
     res.json({activePromotionsData}) ;
   } catch (err) {
     log.error("/active-promotions-data error: " + err);
@@ -32,7 +32,7 @@ router.get("/active-promotions-id", async (req, res) => {
   try {
     var activePromotionsData = await promotionsFunctions.getActivePromotions('id');
     console.log(activePromotionsData);
-    log.info("/active-promotions-id result: " + activePromotionsData);
+    log.info("/active-promotions-id result: " + JSON.stringify(activePromotionsData));
     res.json({activePromotionsData}) ;
   } catch (err) {
     log.error("/active-promotions-id error: " + err);
@@ -46,7 +46,7 @@ router.get("/add-promotions-from-1c", async (req, res) => {
     var promo1C = await promotionsFunctions.getPromotionsfrom1C();
     
     var postPromo = await promotionsFunctions.setPromotion(promo1C);
-    log.info("/add-promotions-from-1c result: " + postPromo);
+    log.info("/add-promotions-from-1c result: " + JSON.stringify(postPromo));
     res.send(postPromo);
   } catch (err) {
     log.error("/add-promotions-from-1c error: " + err);
@@ -58,7 +58,7 @@ router.get("/add-promotions-from-1c", async (req, res) => {
 router.get("/check-promotions-activity", async (req, res) => {
   try {
     var checkPromo = await promotionsFunctions.checkPromotionsActivity();   
-    log.info("/check-promotions-activity result: " + checkPromo);
+    log.info("/check-promotions-activity result: " + JSON.stringify(checkPromo));
     res.send(checkPromo)
   } catch (err) {
     log.error("/check-promotions-activity error: " + err);
@@ -73,7 +73,7 @@ router.post("/post-promotion", async (req, res) => {
     log.info("/post-promotion request: " + req.body);
     if (req.body) {
       const result = await promotionsFunctions.setPromotion(req.body);
-      log.info("/post-promotion result: " + result);
+      log.info("/post-promotion result: " + JSON.stringify(result));
       res.json({ result });
     }
   } catch (err) {
@@ -92,7 +92,7 @@ router.post("/check-product-exist", async (req, res) => {
       await dbQuerie.productExistCascade(req.body.article,async  (result) => {
         log.info(
           "/check-product-exist for promotions result ",
-          resulCheck = result,
+          resulCheck = JSON.stringify(result),
           console.log(" result ", result)
         );
       }); 
@@ -111,19 +111,19 @@ router.post("/check-cart", async (req, res) => {
     if (req.body) {
       const result = await promotionsCheckCart.checkCart(req.body.cart);
       if(result.err==false && result.cascadeCart){
-        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart, cart: result.cart });
-        res.status(200).send({ cascadeCart: result.cascadeCart, cart: result.cart });
+        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart)});
+        res.status(200).send({ cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart) });
       }
       else if(result.err==true && result.errMessage=="Something went wrong" ){
         log.error("/check-cart error: " + result.errMessage);
         res.status(404).send({ cascadeCart: false, message: result.errMessage });
       }
       else if(result.err==true ){
-        log.info("/check-cart result: " + { cascadeCart: false, cart:result.cart, message: result.errMessage });
-        res.status(200).send({ cascadeCart: false, cart:result.cart, message: result.errMessage });
+        log.info("/check-cart result: " + { cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage });
+        res.status(200).send({ cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage });
       }
       else{
-        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart ,cart:result.cart });
+        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart ,cart: JSON.stringify(result.cart) });
         res.status(200).send({ cascadeCart: result.cascadeCart ,cart:result.cart });
       }
     }
