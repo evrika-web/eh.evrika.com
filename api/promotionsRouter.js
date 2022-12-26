@@ -112,7 +112,7 @@ router.post("/check-cart", async (req, res) => {
       const result = await promotionsCheckCart.checkCart(req.body.cart);
       if(result.err==false && result.cascadeCart){
         log.info("/check-cart result: " + { cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart)});
-        res.status(200).send({ cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart) });
+        res.status(200).send({ cascadeCart: result.cascadeCart, cart: result.cart });
       }
       else if(result.err==true && result.errMessage=="Something went wrong" ){
         log.error("/check-cart error: " + result.errMessage);
@@ -120,7 +120,7 @@ router.post("/check-cart", async (req, res) => {
       }
       else if(result.err==true ){
         log.info("/check-cart result: " + { cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage });
-        res.status(200).send({ cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage });
+        res.status(200).send({ cascadeCart: false, cart: result.cart, message: result.errMessage });
       }
       else{
         log.info("/check-cart result: " + { cascadeCart: result.cascadeCart ,cart: JSON.stringify(result.cart) });
