@@ -249,12 +249,14 @@ async function checkCart(cart) {
       salePercentForAllProductsToFixed2 += 0.01;
     }
     var cascadeDiscount = 0;
+    var cartSum = 0;
     cartCascade.forEach(element => {
       var saleForProduct= Number((element.salePrice*(salePercentForAllProductsToFixed2/100)).toFixed(2));
       element.salePrice = Number((element.salePrice - saleForProduct).toFixed(0));
       element.appliedPercent = Number(salePercentForAllProductsToFixed2.toFixed(2));
       element.sum = element.salePrice * element.quantity;
       cascadeDiscount += element.price - element.salePrice;
+      cartSum += element.salePrice;
     });
   } else {
     cascadeCart = false;
@@ -270,7 +272,7 @@ async function checkCart(cart) {
   var cartMapped = cartCascade.concat(cartNotCascade);
   if (cartMapped != []) {
     cascadeCart = true;
-    return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount: Number((cascadeDiscount).toFixed(0)), oldCostDiscount};
+    return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount: Number((cascadeDiscount).toFixed(0)), oldCostDiscount, cartSum};
   } else {
     return { err: true, errMessage: "Something went wrong" };
   }
