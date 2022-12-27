@@ -15,7 +15,7 @@ async function checkCart(cart) {
   cart.forEach(element => {
     oldCostDiscount += element.price - element.salePrice;
   });
-  console.log("oldCostDiscount ", oldCostDiscount)
+
   // Проверка на кол-во товаров, должно быть больше 1
   if (cart.length < 2) {
     console.log("Для каскадов нужно минимум два разных товаров");
@@ -117,7 +117,6 @@ async function checkCart(cart) {
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
           delete cartSorted[checkProductDublicateIndex].docNumber;
-          // delete cartSorted[checkProductDublicateIndex].salePrice;
           cartSorted[checkProductDublicateIndex].cascade = false;
           cartNotCascade.push(cartSorted[checkProductDublicateIndex]);
           cartCascade.splice(checkProductDublicateIndex, 1);
@@ -133,7 +132,6 @@ async function checkCart(cart) {
           (!checkCategory && checkPriceRange)
         ) {
           cartSorted[cartObj].docNumber = docNumberActiceCascade;
-          // cartSorted[cartObj].salePrice = cartSorted[cartObj].salePrice;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
           cartCascade.push(cartSorted[cartObj]);
@@ -146,7 +144,6 @@ async function checkCart(cart) {
           checkPriceRange
         ) {
           cartSorted[cartObj].docNumber = docNumberActiceCascade;
-          // cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount[categoryIndex].count += 1;
           cartCascade.push(cartSorted[cartObj]);
@@ -181,7 +178,6 @@ async function checkCart(cart) {
   if (cartCascade.length == 1) {
     cartCascade[0].cascade = false;
     delete cartCascade[0].docNumber;
-    // delete cartCascade[0].salePrice;
     cartNotCascade.push(cartCascade[0]);
     cartCascade.splice(0, 1);
     console.log(
@@ -233,7 +229,6 @@ async function checkCart(cart) {
       for (var i = lastIndexCascadeArray; i > cascadePercents.length ; i--) {
         cartCascade[i].cascade = false;
         delete cartCascade[i].docNumber;
-        // delete cartCascade[i].salePrice;
         cartNotCascade.push(cartCascade[i]);
         console.log(
           "Убираем товар который не вошел в расчет скидки каскада",
