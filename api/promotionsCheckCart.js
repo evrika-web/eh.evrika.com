@@ -11,6 +11,11 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function checkCart(cart) {
+  var oldCostDiscount = 0;
+  cart.forEach(element => {
+    oldCostDiscount += element.price - element.salePrice;
+  });
+  console.log("oldCostDiscount ", oldCostDiscount)
   // Проверка на кол-во товаров, должно быть больше 1
   if (cart.length < 2) {
     console.log("Для каскадов нужно минимум два разных товаров");
@@ -29,7 +34,7 @@ async function checkCart(cart) {
   var cartNotCascade = [];
   var categoriesCount = [];
   var cartSorted = cart.sort(function (a, b) {
-    return b.price - a.price;
+    return b.salePrice - a.salePrice;
   });
 
   //получение номера документа активного каскада
@@ -95,7 +100,7 @@ async function checkCart(cart) {
         var checkPriceRange = true;
         if (cartCascade.length != 0) {
           checkPriceRange = cartCascade.some(
-            (x) => Math.abs(x.price - cartSorted[cartObj].price) > 10
+            (x) => Math.abs(x.salePrice - cartSorted[cartObj].salePrice) > 10
           );
         } else {
           checkPriceRange = true;
@@ -112,7 +117,7 @@ async function checkCart(cart) {
           cartSorted[cartObj].cascade = false;
           cartNotCascade.push(cartSorted[cartObj]);
           delete cartSorted[checkProductDublicateIndex].docNumber;
-          delete cartSorted[checkProductDublicateIndex].salePrice;
+          // delete cartSorted[checkProductDublicateIndex].salePrice;
           cartSorted[checkProductDublicateIndex].cascade = false;
           cartNotCascade.push(cartSorted[checkProductDublicateIndex]);
           cartCascade.splice(checkProductDublicateIndex, 1);
@@ -128,7 +133,7 @@ async function checkCart(cart) {
           (!checkCategory && checkPriceRange)
         ) {
           cartSorted[cartObj].docNumber = docNumberActiceCascade;
-          cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
+          // cartSorted[cartObj].salePrice = cartSorted[cartObj].salePrice;
           cartSorted[cartObj].cascade = true;
           categoriesCount.push(tempObj);
           cartCascade.push(cartSorted[cartObj]);
@@ -141,7 +146,7 @@ async function checkCart(cart) {
           checkPriceRange
         ) {
           cartSorted[cartObj].docNumber = docNumberActiceCascade;
-          cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
+          // cartSorted[cartObj].salePrice = cartSorted[cartObj].price;
           cartSorted[cartObj].cascade = true;
           categoriesCount[categoryIndex].count += 1;
           cartCascade.push(cartSorted[cartObj]);
@@ -176,7 +181,7 @@ async function checkCart(cart) {
   if (cartCascade.length == 1) {
     cartCascade[0].cascade = false;
     delete cartCascade[0].docNumber;
-    delete cartCascade[0].salePrice;
+    // delete cartCascade[0].salePrice;
     cartNotCascade.push(cartCascade[0]);
     cartCascade.splice(0, 1);
     console.log(
@@ -213,22 +218,22 @@ async function checkCart(cart) {
     // Поиск последнего товара в каскадах для приравнивания скидки
     var lastIndexCascadeArray = cartCascade.length - 1;
     var cascadePercent = 20;
-    var totalDiscount = 0;
+    var cascadeDiscountInitial = 0;
     if (cascadePercents.length >= cartCascade.length) {
       cascadePercent = cascadePercents[lastIndexCascadeArray - 1];
       cartCascade[lastIndexCascadeArray].cascadePercent =
         cascadePercents[lastIndexCascadeArray - 1];
-      totalDiscount = cartCascade[lastIndexCascadeArray].price * (cascadePercent);
+      cascadeDiscountInitial = cartCascade[lastIndexCascadeArray].salePrice * (cascadePercent);
     } else {
       cascadePercent = cascadePercents[cascadePercents.length - 1];
       cartCascade[cascadePercents.length].cascadePercent =
       cascadePercents[cascadePercents.length-1];
-      totalDiscount = cartCascade[cascadePercents.length].price * cascadePercent;
+      cascadeDiscountInitial = cartCascade[cascadePercents.length].salePrice * cascadePercent;
     
       for (var i = lastIndexCascadeArray; i > cascadePercents.length ; i--) {
         cartCascade[i].cascade = false;
         delete cartCascade[i].docNumber;
-        delete cartCascade[i].salePrice;
+        // delete cartCascade[i].salePrice;
         cartNotCascade.push(cartCascade[i]);
         console.log(
           "Убираем товар который не вошел в расчет скидки каскада",
@@ -240,19 +245,21 @@ async function checkCart(cart) {
     // Вычисления скидки для всех товаров каскада
     var overallSum=0
     cartCascade.forEach(element => {
-      overallSum += element.price
+      overallSum += element.salePrice
     });
     
-    var salePercentForAllProducts = totalDiscount / overallSum;
+    var salePercentForAllProducts = cascadeDiscountInitial / overallSum;
     var salePercentForAllProductsToFixed2=Number(salePercentForAllProducts.toFixed(2));
     if(salePercentForAllProductsToFixed2<salePercentForAllProducts){
       salePercentForAllProductsToFixed2 += 0.01;
     }
+    var cascadeDiscount = 0;
     cartCascade.forEach(element => {
-      var saleForProduct= Number((element.price*(salePercentForAllProductsToFixed2/100)).toFixed(2));
+      var saleForProduct= Number((element.salePrice*(salePercentForAllProductsToFixed2/100)).toFixed(2));
       element.salePrice = Number((element.salePrice - saleForProduct).toFixed(0));
       element.appliedPercent = Number(salePercentForAllProductsToFixed2.toFixed(2));
       element.sum = element.salePrice * element.quantity;
+      cascadeDiscount += element.price - element.salePrice;
     });
   } else {
     cascadeCart = false;
@@ -268,7 +275,7 @@ async function checkCart(cart) {
   var cartMapped = cartCascade.concat(cartNotCascade);
   if (cartMapped != []) {
     cascadeCart = true;
-    return { err: false, cascadeCart, cart: cartMapped };
+    return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount: Number((cascadeDiscount).toFixed(0)), oldCostDiscount};
   } else {
     return { err: true, errMessage: "Something went wrong" };
   }
