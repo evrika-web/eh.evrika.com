@@ -255,7 +255,7 @@ async function checkCart(cart) {
       element.salePrice = Number((element.salePrice - saleForProduct).toFixed(0));
       element.appliedPercent = Number(salePercentForAllProductsToFixed2.toFixed(2));
       element.sum = element.salePrice * element.quantity;
-      console.log("id ", element.unique_id, " saleForProduct ", oldSalePrice - element.salePrice)
+      // console.log("id ", element.unique_id, " saleForProduct ", oldSalePrice - element.salePrice)
       cascadeDiscount += oldSalePrice - element.salePrice;
     });
   } else {
