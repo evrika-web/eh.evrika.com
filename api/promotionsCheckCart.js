@@ -249,14 +249,14 @@ async function checkCart(cart) {
       salePercentForAllProductsToFixed2 += 0.01;
     }
     var cascadeDiscount = 0;
-    var cartSum = 0;
     cartCascade.forEach(element => {
       var saleForProduct= Number((element.salePrice*(salePercentForAllProductsToFixed2/100)).toFixed(2));
+      var oldSalePrice = element.salePrice;
       element.salePrice = Number((element.salePrice - saleForProduct).toFixed(0));
       element.appliedPercent = Number(salePercentForAllProductsToFixed2.toFixed(2));
       element.sum = element.salePrice * element.quantity;
-      cascadeDiscount += element.price - element.salePrice;
-      cartSum += element.salePrice;
+      console.log("id ", element.unique_id, " saleForProduct ", oldSalePrice - element.salePrice)
+      cascadeDiscount += oldSalePrice - element.salePrice;
     });
   } else {
     cascadeCart = false;
@@ -270,9 +270,13 @@ async function checkCart(cart) {
 
   // Соединяем массив каскадов с массивом не каскадов для отправки результата
   var cartMapped = cartCascade.concat(cartNotCascade);
+  var cartSum = 0;
   if (cartMapped != []) {
     cascadeCart = true;
-    return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount: Number((cascadeDiscount).toFixed(0)), oldCostDiscount, cartSum};
+    cartMapped.forEach(e => {
+      cartSum += e.salePrice
+    });
+    return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount, oldCostDiscount, cartSum};
   } else {
     return { err: true, errMessage: "Something went wrong" };
   }
