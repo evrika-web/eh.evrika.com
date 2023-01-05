@@ -61,7 +61,7 @@ knex migrate:list
 - "fs": "^0.0.1-security"- для работы с файлами [Документация](https://nodejs.org/api/fs.html)
 - "knex": "^2.3.0"- для работы с БД [Документация](https://knexjs.org/)
 - "moment": "^2.29.4"- для работы с датами [Документация](https://www.npmjs.com/package/moment)
-- "mysql": "^2.18.1"- для работы с БД [Документация](https://www.npmjs.com/package/mysql)
+- "mysql": "^2.18.1"- для работы с БД mysql [Документация](https://www.npmjs.com/package/mysql)
 - "mysql-migrations": "^1.0.7"- для работы с миграциями [Документация](https://www.npmjs.com/package/mysql-migrations) 
 - "node-schedule": "^2.1.0"- для создания крон задач [Документация](https://www.npmjs.com/package/node-schedule)
 - "nodemon": "^2.0.20"- для запуска проекта и автоматического рестарта при изменении файлов [Документация](https://www.npmjs.com/package/nodemon)
