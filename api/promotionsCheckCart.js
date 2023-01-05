@@ -209,7 +209,8 @@ async function checkCart(cart) {
         }
       });
     } catch (error) {
-      console.log("error percentsCascade", error);
+      log.error("error percentsCascade ", error)
+      console.log("error percentsCascade ", error);
     }
 
     // Поиск последнего товара в каскадах для приравнивания скидки
@@ -278,6 +279,7 @@ async function checkCart(cart) {
     });
     return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount, oldCostDiscount, cartSum};
   } else {
+    log.error("Something went wrong");
     return { err: true, errMessage: "Something went wrong" };
   }
 }
@@ -294,6 +296,7 @@ async function dbCheckExistCascade(article) {
       }
     });
   } catch (error) {
+    log.error("check if exist product in exeptions ", error);
     return error;
   }
   return resulCheck;
