@@ -107,23 +107,24 @@ router.post("/check-product-exist", async (req, res) => {
 //проверка корзины на наличие акции каскад
 router.post("/check-cart", async (req, res) => {
   try {
-    log.info("/check-cart request: " + req.body);
+    log.info("/check-cart request: " + JSON.stringify(req.body.cart));
     if (req.body) {
       const result = await promotionsCheckCart.checkCart(req.body.cart);
       if(result.err==false && result.cascadeCart){
-        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart)});
+        // logData = 
+        log.info("/check-cart result: " + JSON.stringify( { cascadeCart: result.cascadeCart, cart: JSON.stringify(result.cart)}));
         res.status(200).send({ cascadeCart: result.cascadeCart, oldCostDiscount: result.oldCostDiscount, cascadeDiscount: result.cascadeDiscount, totalDiscount: result.oldCostDiscount+ result.cascadeDiscount, cartSum: result.cartSum, cart: result.cart  });
       }
       else if(result.err==true && result.errMessage=="Something went wrong" ){
-        log.error("/check-cart error: " + result.errMessage);
+        log.error("/check-cart error: " + JSON.stringify(result.errMessage));
         res.status(404).send({ cascadeCart: false, message: result.errMessage });
       }
       else if(result.err==true ){
-        log.info("/check-cart result: " + { cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage });
+        log.info("/check-cart result: " + JSON.stringify({ cascadeCart: false, cart: JSON.stringify(result.cart), message: result.errMessage }));
         res.status(200).send({ cascadeCart: false, cart: result.cart, message: result.errMessage });
       }
       else{
-        log.info("/check-cart result: " + { cascadeCart: result.cascadeCart ,cart: JSON.stringify(result.cart) });
+        log.info("/check-cart result: " + JSON.stringify({ cascadeCart: result.cascadeCart ,cart: JSON.stringify(result.cart) }));
         res.status(200).send({ cascadeCart: result.cascadeCart, oldCostDiscount: result.oldCostDiscount, cascadeDiscount: result.cascadeDiscount, totalDiscount: result.oldCostDiscount+ result.cascadeDiscount, cartSum: result.cartSum, cart:result.cart });
       }
     }
