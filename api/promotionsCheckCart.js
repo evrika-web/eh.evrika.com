@@ -275,7 +275,7 @@ async function checkCart(cart) {
   if (cartMapped != []) {
     cascadeCart = true;
     cartMapped.forEach(e => {
-      cartSum += e.salePrice
+      cartSum += e.sum
     });
     return { err: false, cascadeCart, cart: cartMapped, cascadeDiscount, oldCostDiscount, cartSum};
   } else {
