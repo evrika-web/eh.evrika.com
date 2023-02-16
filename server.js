@@ -31,14 +31,15 @@ app.use("/api", promotionsRouter);
 app.get("/max-bonus/:article", async (req, res) => {
   const { article } = req.params;
   let articleFirstLetters = article[0]+ article[1];
-  let articleID
+  // console.log("articleFirstLetters ", articleFirstLetters)
+  let articleID = article;
   if(articleFirstLetters === 'RS'){
     articleID = article.replace("RS","98");
   }
   else if(articleFirstLetters === 'HQ'){
     articleID = article.replace("HQ","54");
   }
-  console.log("article ", articleID)
+  // console.log("article ", articleID)
   try {
     var maxBonusCheck;
     await dbQuerie.maxBonusCheck(articleID, async (result) => {
