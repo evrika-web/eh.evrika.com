@@ -170,4 +170,18 @@ module.exports = {
         callback(undefined);
       });
   },
+
+  //Проверка наличия бонуса у товара по артиклу
+  maxBonusCheck: async (articleID, callback) => {
+    await knex("max_bonus")
+      .count('article as count')
+      .where({article: articleID})
+      .then((response) => {
+        callback(response);
+      })
+      .catch((err) => {
+        console.log(err);
+        callback(undefined);
+      });
+  },
 };
