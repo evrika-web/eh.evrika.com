@@ -56,7 +56,7 @@ app.get("/max-bonus/:article", async (req, res) => {
           items: [
             {
               art_id: article,
-              max_cashback: 0,
+              max_cashback: 5,
             },
           ],
         },
