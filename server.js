@@ -45,7 +45,7 @@ app.get("/max-bonus/:article", async (req, res) => {
         if(result[0].nal !== null)
         maxBonusPercent = result[0].nal;
         else{          
-        maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 5;
+        maxBonusPercent = 20;
         }
       }else{
         maxBonusCheck = 0;
