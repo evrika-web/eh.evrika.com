@@ -30,75 +30,52 @@ app.use("/api", promotionsRouter);
 //Проверка максимального бонуса у товара по артиклу
 app.get("/max-bonus/:article", async (req, res) => {
   const { article } = req.params;
-  let articleFirstLetters = article[0]+ article[1];
-  // console.log("articleFirstLetters ", articleFirstLetters)
+  let articleFirstLetters = article[0] + article[1];
   let articleID = article;
-  if(articleFirstLetters === 'RS'){
-    articleID = article.replace("RS","98");
+  if (articleFirstLetters === "RS") {
+    articleID = article.replace("RS", "98");
+  } else if (articleFirstLetters === "HQ") {
+    articleID = article.replace("HQ", "54");
   }
-  else if(articleFirstLetters === 'HQ'){
-    articleID = article.replace("HQ","54");
-  }
-  // console.log("article ", articleID)
   try {
     var maxBonusCheck;
     await dbQuerie.maxBonusCheck(articleID, async (result) => {
-      // console.log("result ", result[0].count)
-      maxBonusCheck = result[0].count;
+      if (result.length !== 0) {
+        maxBonusCheck = result[0].count;
+        if(result[0].nal !== null)
+        maxBonusPercent = result[0].nal;
+        else{          
+        maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 5;
+        }
+      }else{
+        maxBonusCheck = 0;
+        maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 5;
+      }
     });
-    // console.log("maxBonusCheck ", maxBonusCheck);
-    if (maxBonusCheck === 0) {
-      // Perform some query
-      return res.json({
-        success: true,
-        status: 200,
-        data: {
-          items: [
-            {
-              art_id: article,
-              max_cashback: 5,
-            },
-          ],
-        },
-      });
-    } else if(maxBonusCheck !== undefined){
-      // Perform another query
-      return res.json({
-        success: true,
-        status: 200,
-        data: {
-          items: [
-            {
-              art_id: article,
-              max_cashback: 20,
-            },
-          ],
-        },
-      });
-    }
-    else{
-      res.status(500).send({
-        success: false,
-        status: 500,
-        data:[
-          {
-            message: "Unpredictable error"
-          }
-        ]
-      });
-    }
   } catch (err) {
     log.error("maxBonusCheck error: " + err);
     res.status(404).send({
       success: false,
       status: 404,
-      data:[
+      data: [
         {
-          message: err
-        }
-      ]
+          message: err,
+        },
+      ],
     });
-  }
+  }  
+  return res.json({
+    success: true,
+    status: 200,
+    data: {
+      items: [
+        {
+          art_id: article,
+          max_cashback: maxBonusPercent,
+        },
+      ],
+    },
+  });
 });
 
 //Определение порта и хоста для сервера

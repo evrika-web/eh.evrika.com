@@ -174,8 +174,10 @@ module.exports = {
   //Проверка наличия бонуса у товара по артиклу
   maxBonusCheck: async (articleID, callback) => {
     await knex("max_bonus")
+      .select("*")
       .count('article as count')
       .where({article: articleID})
+      .groupBy('id')
       .then((response) => {
         callback(response);
       })
