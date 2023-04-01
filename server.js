@@ -44,11 +44,11 @@ app.get("/max-bonus/:article", async (req, res) => {
         maxBonusCheck = result[0].count;
         if (result[0].nal !== null) maxBonusPercent = result[0].nal;
         else {
-          maxBonusPercent = 20;
+          maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 20;
         }
       } else {
         maxBonusCheck = 0;
-        maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 5;
+        maxBonusPercent = process.env.MAX_BONUS_CACHBACK_STANDART || 5;
       }
     });
   } catch (err) {
@@ -77,91 +77,6 @@ app.get("/max-bonus/:article", async (req, res) => {
   });
 });
 
-app.get("/max-bonus-test/:article", async (req, res) => {
-  const { article } = req.params;
-  let articleFirstLetters = article[0] + article[1];
-  let articleID = article;
-  if (articleFirstLetters === "RS") {
-    articleID = article.replace("RS", "98");
-  } else if (articleFirstLetters === "HQ") {
-    articleID = article.replace("HQ", "54");
-  }
-  try {
-    var maxBonusCheck;
-    await dbQuerie.maxBonusCheck(articleID, async (result) => {
-      if (result.length !== 0) {
-        maxBonusCheck = result[0].count;
-        if (articleID === "98400015709") {
-          maxBonusPercent = 1.5;
-        } else if (articleID === "98400015708") {
-          maxBonusPercent = true;
-        }
-         else if (result[0].nal !== null) {
-          maxBonusPercent = result[0].nal;
-        } else if (articleID === "OF000009597") {
-          maxBonusPercent = 5;
-        } else {
-          maxBonusPercent = 20;
-        }
-      } else if (articleID === "test") {
-        maxBonusPercent = "Why you are so serious?";
-      } else {
-        maxBonusCheck = 0;
-        maxBonusPercent = process.env.MAX_BONUS_CACHBACK || 5;
-      }
-    });
-  } catch (err) {
-    log.error("maxBonusCheck error: " + err);
-    res.status(404).send({
-      success: false,
-      status: 404,
-      data: [
-        {
-          message: err,
-        },
-      ],
-    });
-  }
-  if(articleID === '98400015864'){
-    return res.json({
-      success: true,
-      status: 404,
-      err:'404 Not Found!'
-    });
-  } else if(articleID === 'OF000009590'){
-    return res.json({
-      success: true,
-      status: 500,
-      err:'unpredictable error'
-    });
-  } else if(articleID === 'OF000009589'){
-    return res.json({
-      success: true,
-      status: 200,
-      data: {
-        items: [
-          {
-            art_Id: article,
-            max_CashBack: maxBonusPercent,
-          },
-        ],
-      },
-    });
-    }
-  
-  return res.json({
-    success: true,
-    status: 200,
-    data: {
-      items: [
-        {
-          art_id: article,
-          max_cashback: maxBonusPercent,
-        },
-      ],
-    },
-  });
-});
 //Определение порта и хоста для сервера
 app.listen(port, host, () => {
   log.info(`Server running on port ${port} and host ${host}`);
