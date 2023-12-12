@@ -4,9 +4,10 @@ const moment = require("moment");
 require("dotenv").config();
 
 const SimpleNodeLogger = require("simple-node-logger");
-const promotionsFunctions = require("./promotionsFunctions");
-const promotionsCheckCart = require("./promotionsCheckCart");
-const dbQuerie=require('../database/dbQuerie')
+const promotionsFunctions = require("../api/promotions/promotionsFunctions");
+const promotionsCheckCart = require("../api/promotions/promotionsCheckCart");
+const dbQuerie = require("../database/mySQL/dbQuerie");
+
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-api.log`,

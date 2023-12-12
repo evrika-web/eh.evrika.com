@@ -1,6 +1,6 @@
 const moment = require("moment");
 const SimpleNodeLogger = require("simple-node-logger");
-const dbQuerie = require("../database/dbQuerie");
+const dbQuerie = require("../../database/mySQL/dbQuerie");
 
 opts = {
   logFilePath: `logs/${moment().format(

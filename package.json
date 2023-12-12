@@ -20,6 +20,9 @@
     "mysql-migrations": "^1.0.7",
     "node-schedule": "^2.1.0",
     "nodemon": "^2.0.20",
-    "simple-node-logger": "^21.8.12"
+    "simple-node-logger": "^21.8.12",
+    "cors": "^2.8.5",
+    "fast-xml-parser": "^4.3.2",
+    "mongodb": "^6.1.0"
   }
 }

@@ -66,3 +66,6 @@ knex migrate:list
 - "node-schedule": "^2.1.0"- для создания крон задач [Документация](https://www.npmjs.com/package/node-schedule)
 - "nodemon": "^2.0.20"- для запуска проекта и автоматического рестарта при изменении файлов [Документация](https://www.npmjs.com/package/nodemon)
 - "simple-node-logger": "^21.8.12"- для создания логов [Документация](https://www.npmjs.com/package/simple-node-logger)
+- "cors": "^2.8.5" - система управления CORS policy [Документация](https://www.npmjs.com/package/cors)
+- "fast-xml-parser": "^4.3.2" - для работы с xml файлами (считывание и запись) [Документация](https://www.npmjs.com/package/fast-xml-parser)
+- "mongodb": "^6.1.0" - для работы с БД Mongo [Документация](https://www.npmjs.com/package/mongodb)

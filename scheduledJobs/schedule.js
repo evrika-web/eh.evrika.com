@@ -3,7 +3,7 @@ const moment = require("moment");
 const fs = require("fs");
 
 //add functions
-const promotionsFunctions = require("../api/promotionsFunctions");
+const promotionsFunctions = require("../api/promotions/promotionsFunctions");
 
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");
@@ -33,10 +33,10 @@ schedule.scheduleJob(ruleNewPromos, async () => {
   }
 });
 
+//Проверка по установленному времени на активность акций (старт акции, окончание акции)
 var ruleCheckDates = new schedule.RecurrenceRule();
 ruleCheckDates.hour = 2;
 ruleCheckDates.minutes = 55;
-//Проверка по установленному времени на активность акций (старт акции, окончание акции)
 schedule.scheduleJob(ruleCheckDates, async () => {
   log.info(
     moment().format("HH:mm DD-MM-YYYY"),
@@ -51,9 +51,10 @@ schedule.scheduleJob(ruleCheckDates, async () => {
   }
 });
 
-
 //Проверка по установленному времени на старые логи
-schedule.scheduleJob({hour: 03}, async () => {
+var ruleLogs = new schedule.RecurrenceRule();
+ruleLogs.hour = 3;
+schedule.scheduleJob(ruleLogs, async () => {
   log.info(moment().format("HH:mm DD-MM-YYYY"), " Time to delete old logs");
   try {
     const dateToDelete = moment().subtract(7, "days").format("DD-MM-YYYY");

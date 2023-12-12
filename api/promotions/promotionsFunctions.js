@@ -3,7 +3,7 @@ const moment = require("moment");
 require("dotenv").config();
 
 const SimpleNodeLogger = require("simple-node-logger");
-const dbQuerie = require("../database/dbQuerie");
+const dbQuerie = require("../../database/mySQL/dbQuerie");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-promotions-functions.log`,
@@ -49,7 +49,7 @@ async function promotionsMapping(dataOld, promoName, getActivePromotionsID) {
     for (var i in dataOld) {
       if (
         getActivePromotionsID !== undefined &&
-        getActivePromotionsID !== [] &&
+        getActivePromotionsID != [] &&
         getActivePromotionsID.includes(dataOld[i].Номер)
       )
         continue;
