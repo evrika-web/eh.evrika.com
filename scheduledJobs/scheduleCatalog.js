@@ -3,7 +3,7 @@ const moment = require("moment");
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");
 const { getAppLog } = require("../utility/appLoggers");
-const updateData = require("../api/catalogApi");
+const updateData = require("../api/catalog/catalogApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,

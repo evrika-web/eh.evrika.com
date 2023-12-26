@@ -1,5 +1,5 @@
 const express = require("express");
-const { getHiddenFieldsObject } = require("../../database/mongoDb/mongoQuerie");
+const { getHiddenFieldsObject } = require("../../database/mongoDb/mongoFilter");
 const {
   getAllFromCollection,
   deleteOne,
