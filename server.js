@@ -27,8 +27,9 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-// //CORS policy
-// var cors = require("cors");
+//CORS policy
+var cors = require("cors");
+app.options('*', cors())
 // var corsOptions = {
 //   origin: ["*"]
 // }
