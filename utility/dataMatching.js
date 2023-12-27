@@ -1,10 +1,10 @@
 function catalogMatching(dirtyData, type = "products") {
   var cleanData = {};
+  cleanData.$and = [];
+  cleanData.price = {};
 
   //main filters matching
   if (dirtyData.filters && Object.keys(dirtyData.filters).length !== 0) {
-    cleanData.$and = [];
-    cleanData.price = {};
     for (const key in dirtyData.filters) {
       if (key === "cost_to") {
         if(type!=='prices')

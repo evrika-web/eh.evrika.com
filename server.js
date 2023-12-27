@@ -1,5 +1,15 @@
 const express = require("express");
+var cors = require("cors");
 const app = express();
+
+//CORS policy
+app.use(cors());
+app.options('*', cors())
+// var corsOptions = {
+//   origin: ["*"]
+// }
+// app.use(cors(corsOptions));
+
 const moment = require("moment");
 const promotionsRouter = require("./router/promotionsRouter");
 const catalogMainRouter = require("./router/catalogMainRouter");
@@ -27,13 +37,7 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-//CORS policy
-var cors = require("cors");
-app.options('*', cors())
-// var corsOptions = {
-//   origin: ["*"]
-// }
-// app.use(cors(corsOptions));
+
 
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
