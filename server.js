@@ -27,12 +27,12 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-//CORS policy
-var cors = require("cors");
-var corsOptions = {
-  origin: ["*"]
-}
-app.use(cors(corsOptions));
+// //CORS policy
+// var cors = require("cors");
+// var corsOptions = {
+//   origin: ["*"]
+// }
+// app.use(cors(corsOptions));
 
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
