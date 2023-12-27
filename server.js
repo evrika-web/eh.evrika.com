@@ -29,7 +29,10 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //CORS policy
 var cors = require("cors");
-app.use(cors());
+var corsOptions = {
+  origin: ["https://new.evrika.com","http://new.evrika.com", "https://evrika.com","http://evrika.com","https://site.evrika.com","http://site.evrika.com", "http://localhost:3000", "http://127.0.0.1:3000" ]
+}
+app.use(cors(corsOptions));
 
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
