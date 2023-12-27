@@ -30,7 +30,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 //CORS policy
 var cors = require("cors");
 var corsOptions = {
-  origin: ["https://new.evrika.com","http://new.evrika.com", "https://evrika.com","http://evrika.com","https://site.evrika.com","http://site.evrika.com", "http://localhost:3000", "http://127.0.0.1:3000" ]
+  origin: ["*"]
 }
 app.use(cors(corsOptions));
 
