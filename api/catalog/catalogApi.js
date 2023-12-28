@@ -1,4 +1,5 @@
 
+const { default: axios } = require("axios");
 const { XMLParser } = require("fast-xml-parser");
 
 async function updateData() {
