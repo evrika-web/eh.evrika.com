@@ -16,11 +16,25 @@ schedule.scheduleJob({ hour: 2 }, async () => {
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data");
   let catalogUpdate = await updateData();
   if (catalogUpdate.status === 200)
-    log.info("Daily update log ", {
+    log.info("Daily update products log ", {
       created: catalogUpdate.created,
       updated: catalogUpdate.updated,
     });
   else {
-    log.error("Daily update data error: ", catalogUpdate.error);
+    log.error("Daily update products data error: ", catalogUpdate.error);
+  }
+});
+
+//Обновление данных по категориям
+schedule.scheduleJob({ hour: 1 }, async () => {
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data");
+  let catalogUpdate = await updateCategories();
+  if (catalogUpdate.status === 200)
+    log.info("Daily update categories log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+    });
+  else {
+    log.error("Daily update categories data error: ", catalogUpdate.error);
   }
 });

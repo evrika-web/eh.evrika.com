@@ -16,6 +16,7 @@ const {
 } = require("../database/mongoDb/mongoQuerie");
 const catalogMatching = require("../utility/dataMatching");
 const { XMLParser } = require("fast-xml-parser");
+const { updateData, updateCategories } = require("../api/catalog/catalogApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-search.log`,
@@ -74,14 +75,6 @@ router.post("/catalog/products", async (req, res) => {
           variant: "",
           is_preorder: false,
           badges: [
-            // {
-            //   id: badges.badge.id,
-            //   name: badges.badge.name,
-            //   color: badges.badge.color,
-            //   description: "",
-            //   rich_description: null,
-            //   all_products: 1,
-            // },
           ],
           gift: [],
           position: -1,
@@ -89,14 +82,6 @@ router.post("/catalog/products", async (req, res) => {
         };
         products.push(tempProduct);
       });
-
-      let links = {
-        first:
-          "https://rnd2.evrika.com/api/v1/products?home=1&category_id=234&city_id=1&sort=cost-desc&locale=kk&filters%5Bbrand%5D%5B0%5D=vivo-1&filters%5Bvstroennaya-pamyat%5D%5B0%5D=128-gb&page=1",
-        last: "https://rnd2.evrika.com/api/v1/products?home=1&category_id=234&city_id=1&sort=cost-desc&locale=kk&filters%5Bbrand%5D%5B0%5D=vivo-1&filters%5Bvstroennaya-pamyat%5D%5B0%5D=128-gb&page=1",
-        prev: null,
-        next: null,
-      };
 
       let metaTo = 0;
       if (data.count < limit) {
@@ -110,7 +95,7 @@ router.post("/catalog/products", async (req, res) => {
         current_page: page,
         from: (Number(page) - 1) * limit + 1,
         last_page: Math.ceil(data.count / limit),
-        path: "http://localhost:4223/catalog",
+        path: process.env.FRONT_URL + "/catalog",
         per_page: limit,
         to: metaTo,
         total: data.count,
@@ -543,92 +528,37 @@ router.post("/catalog/filters", async (req, res) => {
 });
 router.get("/update-products", async (req, res) => {
   try {
-    let externalURL =
-      process.env.XML_DATA_URL ||
-      "https://site.evrika.com/facebook/data-all-new.xml";
-    let XMLdata;
-    let jObj = {};
-    await axios(externalURL)
-      .then((result) => {
-        XMLdata = result.data;
-        const parser = new XMLParser({
-          ignoreAttributes: false,
-          attributeNamePrefix: "",
-          allowBooleanAttributes: true,
-          textNodeName: "value",
-        });
-        jObj = parser.parse(XMLdata);
-      })
-      .catch((err) => {
-        console.error("[AXIOS]", err.message);
-        res.status(500).send({ error: err.toString() });
-      });
-    let products = jObj.yml_catalog.shop.offers.offer;
-    const allDBids = await getAllFromCollection(
-      "products",
-      (fields = { id: 1, _id: 0 }),
-      (filter = {}),
-      (page = "all")
-    );
-    let allDBidsMapped = [];
-    if (Array.isArray(allDBids.result)) {
-      allDBids.result.map((e) => {
-        allDBidsMapped.push(e.id);
-      });
-    }
-    let updateData = [];
-    let createData = [];
-    for (let i = 0; i < products.length; i++) {
-      const element = products[i];
-      element._id = parseInt(element.id);
-      element.slug = element.url.slice(27, element.url.indexOf("/p"));
-      if (element.param) {
-        element.specs = element.param;
-        for (let index = 0; index < element.specs.length; index++) {
-          delete element.specs[index].priority;
-          if (element.specs[index].badge_0) {
-            delete element.specs[index].badge_0;
-          } else if (element.specs[index].badge_1) {
-            delete element.specs[index].badge_1;
-          } else if (element.specs[index].badge_2) {
-            delete element.specs[index].badge_2;
-          } else if (element.specs[index].badge_3) {
-            delete element.specs[index].badge_3;
-          } else if (element.specs[index].badge_4) {
-            delete element.specs[index].badge_4;
-          }
-        }
-        delete element.param;
-      }
-      if (element.locations.location) {
-        let templocations = element.locations.location;
-        //check if type is object?
-        if (!Array.isArray(templocations)) {
-          element.locations = [templocations];
-        } else {
-          element.locations = templocations;
-        }
-        delete element.locations.location;
-      }
-      if (element.badges === "") {
-        element.badges = [];
-      } else if (Array.isArray(element.badges)) {
-      }
-      if (allDBidsMapped.includes(element.id)) {
-        updateData.push(element);
-        await replaceOne("products", element, { id: element.id });
-      } else {
-        createData.push(element);
-      }
-    }
-
-    let resultCreate = 0;
-    if (createData.length !== 0) {
-      resultCreate = await insertManyData("products", createData);
-    }
-    res.json({ created: resultCreate, updated: "success" });
+    let catalogUpdate = await updateData();
+  if (catalogUpdate.status === 200)
+    log.info("Update products log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+    });
+  else {
+    throw new Error("Update products data error: ", catalogUpdate);
+  }
   } catch (err) {
     console.log(err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+router.get("/update-categories", async (req, res) => {
+  try {
+    let catalogUpdate = await updateCategories();
+  if (catalogUpdate.status === 200)
+    {log.info("Update categories log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+    });
+    res.status(200).send({
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+    });}
+  else {
+    throw new Error("Update categories data error: ", catalogUpdate.error);
+  }
+  } catch (err) {
+    console.log( 'CATCH: '+ err);
     res.status(500).send({ error: err.toString() });
   }
 });

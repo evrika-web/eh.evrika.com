@@ -1,6 +1,6 @@
-
 const { default: axios } = require("axios");
 const { XMLParser } = require("fast-xml-parser");
+const { getAllFromCollection, insertOneData, replaceOne } = require("../../database/mongoDb/mongoQuerie");
 
 async function updateData() {
   try {
@@ -43,25 +43,21 @@ async function updateData() {
 
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
-      element._id = parseInt(element.id)
-      element.slug = element.url.slice(27,element.url.indexOf('/p'))
+      element._id = parseInt(element.id);
+      element.slug = element.url.slice(27, element.url.indexOf("/p"));
       if (element.param) {
         element.specs = element.param;
         for (let index = 0; index < element.specs.length; index++) {
           delete element.specs[index].priority;
-          if(element.specs[index].badge_0){
+          if (element.specs[index].badge_0) {
             delete element.specs[index].badge_0;
-          }
-          else if(element.specs[index].badge_1){
+          } else if (element.specs[index].badge_1) {
             delete element.specs[index].badge_1;
-          }
-          else if(element.specs[index].badge_2){
+          } else if (element.specs[index].badge_2) {
             delete element.specs[index].badge_2;
-          }
-          else if(element.specs[index].badge_3){
+          } else if (element.specs[index].badge_3) {
             delete element.specs[index].badge_3;
-          }
-          else if(element.specs[index].badge_4){
+          } else if (element.specs[index].badge_4) {
             delete element.specs[index].badge_4;
           }
         }
@@ -96,9 +92,66 @@ async function updateData() {
     }
     return { status: 200, created: resultCreate, updated: updatedCount };
   } catch (err) {
-    console.log(err);
-    return{ status: 500, error: err.toString() };
+    console.error(err);
+    return { status: 500, error: err.toString() };
   }
 }
 
-module.exports = updateData;
+async function updateCategories() {
+  try {
+    let backendUrl = process.env.BACKEND_URL || "htts://evrika.com/api/v1";
+    let config = {
+      headers: {
+        'Authorization': 'Bearer ' + process.env.BACKEND_TOKEN || 'token-key'
+      }
+    }
+    let data;
+    
+    await axios(`${backendUrl}/categories/menutree`, config)
+      .then((result) => {
+        data = result.data.data;
+      })
+      .catch((err) => {
+        console.error("[AXIOS]", err.message);
+        throw new Error({err: err.message.toString()});
+      });
+    if (Array.isArray(data) && data.length !== 0) {
+      const allDBids = await getAllFromCollection(
+        "categories",
+        (fields = { _id: 1 }),
+        (filter = {}),
+        (page = "all")
+      );
+      let allDBidsMapped = [];
+      if (Array.isArray(allDBids.result)) {
+        allDBids.result.map((e) => {
+          allDBidsMapped.push(e._id);
+        });
+      }
+      let updatedCount = 0;
+      let createdCount = 0;
+      for (var i in data) {
+        var item = data[i];
+        item._id = item.id;
+        // If the category is not on DB yet, we add it to DB
+        if (!allDBidsMapped.includes(item.id)) {
+          await insertOneData("categories", item);
+          createdCount += 1;
+        } else {
+          // If the category is already on DB but has changed its name or parent, we update it
+          await replaceOne("categories", item, { _id: item._id });
+          updatedCount += 1;
+        }
+      }
+      return { status: 200, created: createdCount, updated: updatedCount };
+
+    } else {
+      throw new Error("No categories received from the server");
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err.toString() };
+  }
+}
+
+module.exports = { updateData, updateCategories };

@@ -8,7 +8,6 @@ const {
   insertOneData,
   getOneFromCollectionByFilter,
 } = require("../../database/mongoDb/mongoQuerie");
-const dataMatching = require("../../utility/dataMatching");
 
 function getMongoApiRouter(
   singleRoute,
@@ -54,6 +53,7 @@ function getMongoApiRouter(
   });
 
   router.put(singleRoute + "/:id", async (req, res) => {
+    console.log("🚀 ~ file: mongoApi.js:57 ~ router.put ~ req:", req)
     let { id } = req.params;
     if(collectionName==='products'){
         id=parseInt(id)
@@ -74,6 +74,7 @@ function getMongoApiRouter(
   });
 
   router.post(singleRoute, async (req, res) => {
+    console.log("🚀 ~ file: mongoApi.js:78 ~ router.post ~ req:", req)
     try {
       let insertedData = req.body;
       if (postBodyModifier) {
