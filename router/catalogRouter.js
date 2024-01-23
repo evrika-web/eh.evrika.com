@@ -16,7 +16,12 @@ const {
 } = require("../database/mongoDb/mongoQuerie");
 const catalogMatching = require("../utility/dataMatching");
 const { XMLParser } = require("fast-xml-parser");
-const { updateData, updateCategories } = require("../api/catalog/catalogApi");
+const {
+  updateData,
+  updateCategories,
+  updateCities,
+  updateBranches,
+} = require("../api/catalog/catalogApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-search.log`,
@@ -24,14 +29,16 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-
 router.post("/catalog/products", async (req, res) => {
   var body = req.body;
   var sort = body.sort || "";
   var page = body.page || 1;
   var limit = body.limit || 23;
   var conditions = catalogMatching(body, "products");
-  console.log("🚀 ~ file: searchRouter.js:28 ~ router.post ~ conditions:", JSON.stringify(conditions))
+  console.log(
+    "🚀 ~ file: searchRouter.js:28 ~ router.post ~ conditions:",
+    JSON.stringify(conditions)
+  );
   try {
     var data = await getAllFromCollection(
       "products",
@@ -74,8 +81,7 @@ router.post("/catalog/products", async (req, res) => {
           category_name: category.value,
           variant: "",
           is_preorder: false,
-          badges: [
-          ],
+          badges: [],
           gift: [],
           position: -1,
           images: [element.picture],
@@ -116,7 +122,10 @@ router.post("/catalog/filters", async (req, res) => {
   var filtersData = req.body.filters;
   var categoryData = req.body.category_id;
   var conditions = catalogMatching(body, "filters");
-  console.log("🚀 ~ file: searchRouter.js:128 ~ router.post ~ conditions:", JSON.stringify(conditions))
+  console.log(
+    "🚀 ~ file: searchRouter.js:128 ~ router.post ~ conditions:",
+    JSON.stringify(conditions)
+  );
   var conditionsForPrice = catalogMatching(body, "prices");
   try {
     let filtersFinal = [];
@@ -363,16 +372,26 @@ router.post("/catalog/filters", async (req, res) => {
       },
     });
     var prices = await aggregateCollection("products", aggregateArr);
-    if(!Array.isArray(prices) || prices.length===0){
-      prices = await aggregateCollection("products", [{$match:{$and:[{available:"true"},{categoryId: parseInt(categoryData)}]}},{
-        $group: {
-          _id: null,
-          maxPrice: { $max: "$price" },
-          minPrice: { $min: "$price" },
+    if (!Array.isArray(prices) || prices.length === 0) {
+      prices = await aggregateCollection("products", [
+        {
+          $match: {
+            $and: [
+              { available: "true" },
+              { categoryId: parseInt(categoryData) },
+            ],
+          },
         },
-      }])
+        {
+          $group: {
+            _id: null,
+            maxPrice: { $max: "$price" },
+            minPrice: { $min: "$price" },
+          },
+        },
+      ]);
     }
-    
+
     let costFrom = null;
     let costTo = null;
     if (
@@ -526,39 +545,83 @@ router.post("/catalog/filters", async (req, res) => {
     res.status(500).send({ error: err.toString() });
   }
 });
+
 router.get("/update-products", async (req, res) => {
   try {
     let catalogUpdate = await updateData();
-  if (catalogUpdate.status === 200)
-    log.info("Update products log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
-    });
-  else {
-    throw new Error("Update products data error: ", catalogUpdate);
-  }
+    if (catalogUpdate.status === 200)
+      log.info("Update products log ", {
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+    else {
+      throw new Error("Update products data error: ", catalogUpdate);
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({ error: err.toString() });
   }
 });
+
 router.get("/update-categories", async (req, res) => {
   try {
     let catalogUpdate = await updateCategories();
-  if (catalogUpdate.status === 200)
-    {log.info("Update categories log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
-    });
-    res.status(200).send({
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
-    });}
-  else {
-    throw new Error("Update categories data error: ", catalogUpdate.error);
-  }
+    if (catalogUpdate.status === 200) {
+      log.info("Update categories log ", {
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+      res.status(200).send({
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+    } else {
+      throw new Error("Update categories data error: ", catalogUpdate.error);
+    }
   } catch (err) {
-    console.log( 'CATCH: '+ err);
+    console.log("CATCH: " + err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+
+router.get("/update-cities", async (req, res) => {
+  try {
+    let catalogUpdate = await updateCities();
+    if (catalogUpdate.status === 200) {
+      log.info("Update cities log ", {
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+      res.status(200).send({
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+    } else {
+      throw new Error("Update cities data error: ", catalogUpdate.error);
+    }
+  } catch (err) {
+    console.log("CATCH: " + err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+
+router.get("/update-branches", async (req, res) => {
+  try {
+    let catalogUpdate = await updateBranches();
+    if (catalogUpdate.status === 200) {
+      log.info("Update branches log ", {
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+      res.status(200).send({
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+    } else {
+      throw new Error("Update branches data error: ", catalogUpdate.error);
+    }
+  } catch (err) {
+    console.log("CATCH: " + err);
     res.status(500).send({ error: err.toString() });
   }
 });

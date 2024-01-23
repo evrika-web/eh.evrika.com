@@ -1,6 +1,12 @@
 const { default: axios } = require("axios");
 const { XMLParser } = require("fast-xml-parser");
-const { getAllFromCollection, insertOneData, replaceOne } = require("../../database/mongoDb/mongoQuerie");
+const {
+  getAllFromCollection,
+  insertOneData,
+  replaceOne,
+  insertManyData,
+} = require("../../database/mongoDb/mongoQuerie");
+const { dataFetching } = require("../../utility/dataFetching");
 
 async function updateData() {
   try {
@@ -22,7 +28,7 @@ async function updateData() {
       })
       .catch((err) => {
         console.error("[AXIOS]", err.message);
-        res.status(500).send({ error: err.toString() });
+        return ({ error: err.toString(), status:500 });
       });
     let products = jObj.yml_catalog.shop.offers.offer;
     const allDBids = await getAllFromCollection(
@@ -99,59 +105,186 @@ async function updateData() {
 
 async function updateCategories() {
   try {
-    let backendUrl = process.env.BACKEND_URL || "htts://evrika.com/api/v1";
-    let config = {
-      headers: {
-        'Authorization': 'Bearer ' + process.env.BACKEND_TOKEN || 'token-key'
-      }
-    }
-    let data;
-    
-    await axios(`${backendUrl}/categories/menutree`, config)
-      .then((result) => {
-        data = result.data.data;
-      })
-      .catch((err) => {
-        console.error("[AXIOS]", err.message);
-        throw new Error({err: err.message.toString()});
-      });
-    if (Array.isArray(data) && data.length !== 0) {
-      const allDBids = await getAllFromCollection(
-        "categories",
-        (fields = { _id: 1 }),
-        (filter = {}),
-        (page = "all")
-      );
-      let allDBidsMapped = [];
-      if (Array.isArray(allDBids.result)) {
-        allDBids.result.map((e) => {
-          allDBidsMapped.push(e._id);
-        });
-      }
-      let updatedCount = 0;
-      let createdCount = 0;
-      for (var i in data) {
-        var item = data[i];
-        item._id = item.id;
-        // If the category is not on DB yet, we add it to DB
-        if (!allDBidsMapped.includes(item.id)) {
-          await insertOneData("categories", item);
-          createdCount += 1;
-        } else {
-          // If the category is already on DB but has changed its name or parent, we update it
-          await replaceOne("categories", item, { _id: item._id });
-          updatedCount += 1;
+    let dataFetched;
+    dataFetched = await dataFetching("/categories/menutree", false);
+    let data = dataFetched.data
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const allDBids = await getAllFromCollection(
+          "categories",
+          (fields = { _id: 1 }),
+          (filter = {}),
+          (page = "all")
+        );
+        let allDBidsMapped = [];
+        if (Array.isArray(allDBids.result)) {
+          allDBids.result.map((e) => {
+            allDBidsMapped.push(e._id);
+          });
         }
+        let updatedCount = 0;
+        let createdCount = 0;
+        for (var i in data) {
+          var item = data[i];
+          item._id = item.id;
+          // If the category is not on DB yet, we add it to DB
+          if (!allDBidsMapped.includes(item.id)) {
+            await insertOneData("categories", item);
+            createdCount += 1;
+          } else {
+            // If the category is already on DB but has changed its name or parent, we update it
+            await replaceOne("categories", item, { _id: item._id });
+            updatedCount += 1;
+          }
+        }
+        return { status: 200, created: createdCount, updated: updatedCount };
+      } else {
+        throw new Error("No categories received from the server", data.err);
       }
-      return { status: 200, created: createdCount, updated: updatedCount };
-
     } else {
-      throw new Error("No categories received from the server");
+      throw new Error(`Server responded ${data.err}`);
     }
   } catch (err) {
     console.error(err);
     return { status: 500, error: err.toString() };
   }
 }
-
-module.exports = { updateData, updateCategories };
+async function updateCities() {
+  try {
+    let dataFetched;
+    dataFetched = await dataFetching("/cities", false);
+    let data = dataFetched.data
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const allDBids = await getAllFromCollection(
+          "cities",
+          (fields = { _id: 1 }),
+          (filter = {}),
+          (page = "all")
+        );
+        let allDBidsMapped = [];
+        if (Array.isArray(allDBids.result)) {
+          allDBids.result.map((e) => {
+            allDBidsMapped.push(e._id);
+          });
+        }
+        let updatedCount = 0;
+        let createdCount = 0;
+        for (var i in data) {
+          var item = data[i];
+          item._id = item.id;
+          // If the cities is not on DB yet, we add it to DB
+          if (!allDBidsMapped.includes(item.id)) {
+            await insertOneData("cities", item);
+            createdCount += 1;
+          } else {
+            // If the cities is already on DB but has changed its name or parent, we update it
+            await replaceOne("cities", item, { _id: item._id });
+            updatedCount += 1;
+          }
+        }
+        return { status: 200, created: createdCount, updated: updatedCount };
+      } else {
+        throw new Error("No cities received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${data.err}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err.toString() };
+  }
+}
+async function updateBranches() {
+  try {
+    let dataFetched;
+    dataFetched = await dataFetching("/branches", false);
+    let data = dataFetched.data
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const allDBids = await getAllFromCollection(
+          "branches",
+          (fields = { _id: 1 }),
+          (filter = {}),
+          (page = "all")
+        );
+        let allDBidsMapped = [];
+        if (Array.isArray(allDBids.result)) {
+          allDBids.result.map((e) => {
+            allDBidsMapped.push(e._id);
+          });
+        }
+        let updatedCount = 0;
+        let createdCount = 0;
+        for (var i in data) {
+          var item = data[i];
+          item._id = item.id;
+          // If the cities is not on DB yet, we add it to DB
+          if (!allDBidsMapped.includes(item.id)) {
+            await insertOneData("branches", item);
+            createdCount += 1;
+          } else {
+            // If the cities is already on DB but has changed its name or parent, we update it
+            await replaceOne("branches", item, { _id: item._id });
+            updatedCount += 1;
+          }
+        }
+        return { status: 200, created: createdCount, updated: updatedCount };
+      } else {
+        throw new Error("No branches received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${data.err}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err.toString() };
+  }
+}
+async function updateCosts() {
+  try {
+    let dataFetched;
+    dataFetched = await dataFetching("http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost", true, {});
+    let data = dataFetched.data
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const allDBids = await getAllFromCollection(
+          "costs",
+          (fields = { _id: 1 }),
+          (filter = {}),
+          (page = "all")
+        );
+        let allDBidsMapped = [];
+        if (Array.isArray(allDBids.result)) {
+          allDBids.result.map((e) => {
+            allDBidsMapped.push(e._id);
+          });
+        }
+        let updatedCount = 0;
+        let createdCount = 0;
+        for (var i in data) {
+          var item = data[i];
+          item._id = item.id;
+          // If the cities is not on DB yet, we add it to DB
+          if (!allDBidsMapped.includes(item.id)) {
+            await insertOneData("costs", item);
+            createdCount += 1;
+          } else {
+            // If the cities is already on DB but has changed its name or parent, we update it
+            await replaceOne("costs", item, { _id: item._id });
+            updatedCount += 1;
+          }
+        }
+        return { status: 200, created: createdCount, updated: updatedCount };
+      } else {
+        throw new Error("No costs received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${data.err}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err.toString() };
+  }
+}
+module.exports = { updateData, updateCategories, updateCities, updateBranches, updateCosts };

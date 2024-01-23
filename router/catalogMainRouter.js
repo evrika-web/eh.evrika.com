@@ -26,6 +26,9 @@ const router=[
   getMongoApiRouter('/spec_value', '/spec_values', 'spec_values', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
+  getMongoApiRouter('/city', '/cities', 'cities', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  }),
 ]
 
 module.exports = router;

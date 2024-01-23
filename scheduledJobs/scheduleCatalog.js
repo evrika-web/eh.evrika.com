@@ -3,7 +3,12 @@ const moment = require("moment");
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");
 const { getAppLog } = require("../utility/appLoggers");
-const updateData = require("../api/catalog/catalogApi");
+const {
+  updateData,
+  updateCategories,
+  updateCities,
+  updateBranches,
+} = require("../api/catalog/catalogApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,
@@ -13,28 +18,70 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //Обновление данных по товарам
 schedule.scheduleJob({ hour: 2 }, async () => {
+  const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data");
   let catalogUpdate = await updateData();
-  if (catalogUpdate.status === 200)
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
     log.info("Daily update products log ", {
       created: catalogUpdate.created,
       updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
     });
-  else {
+  } else {
     log.error("Daily update products data error: ", catalogUpdate.error);
   }
 });
 
 //Обновление данных по категориям
 schedule.scheduleJob({ hour: 1 }, async () => {
-  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data");
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update categories");
   let catalogUpdate = await updateCategories();
-  if (catalogUpdate.status === 200)
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
     log.info("Daily update categories log ", {
       created: catalogUpdate.created,
       updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
     });
-  else {
+  } else {
     log.error("Daily update categories data error: ", catalogUpdate.error);
+  }
+});
+
+//Обновление данных по городам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update cities");
+  let catalogUpdate = await updateCities();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Daily update cities log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update cities data error: ", catalogUpdate.error);
+  }
+});
+
+//Обновление данных по городам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update branches");
+  let catalogUpdate = await updateBranches();
+  if (catalogUpdate.status === 200)
+  {
+    const end = new Date().getTime();
+    log.info("Daily update branches log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  }
+  else {
+    log.error("Daily update branches data error: ", catalogUpdate.error);
   }
 });
