@@ -10,6 +10,7 @@ const { dataFetching } = require("../../utility/dataFetching");
 
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");
+const moment = require("moment");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalogAPI.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
