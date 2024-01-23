@@ -139,10 +139,10 @@ async function updateCategories() {
         }
         return { status: 200, created: createdCount, updated: updatedCount };
       } else {
-        throw new Error("No categories received from the server", data.err);
+        throw new Error("No categories received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data.err}`);
+      throw new Error(`Server responded ${data}`);
     }
   } catch (err) {
     console.error(err);
@@ -188,7 +188,7 @@ async function updateCities() {
         throw new Error("No cities received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data.err}`);
+      throw new Error(`Server responded ${data}`);
     }
   } catch (err) {
     console.error(err);
@@ -234,7 +234,7 @@ async function updateBranches() {
         throw new Error("No branches received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data.err}`);
+      throw new Error(`Server responded ${data}`);
     }
   } catch (err) {
     console.error(err);
@@ -280,7 +280,7 @@ async function updateCosts() {
         throw new Error("No costs received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data.err}`);
+      throw new Error(`Server responded ${data}`);
     }
   } catch (err) {
     console.error(err);
