@@ -116,7 +116,7 @@ async function updateCategories() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/categories/menutree", false);
-    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update categories ", dataFetched);
+    log.info(moment().format("HH:mm DD-MM-YYYY"), " Update categories ", dataFetched);
     let data = dataFetched.data
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
@@ -152,7 +152,7 @@ async function updateCategories() {
         throw new Error("No categories received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data}`);
+      throw new Error(`Server responded ${dataFetched}`);
     }
   } catch (err) {
     console.error(err);
@@ -199,7 +199,7 @@ async function updateCities() {
         throw new Error("No cities received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data}`);
+      throw new Error(`Server responded ${dataFetched}`);
     }
   } catch (err) {
     console.error(err);
@@ -246,7 +246,7 @@ async function updateBranches() {
         throw new Error("No branches received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data}`);
+      throw new Error(`Server responded ${dataFetched}`);
     }
   } catch (err) {
     console.error(err);
@@ -293,7 +293,7 @@ async function updateCosts() {
         throw new Error("No costs received from the server");
       }
     } else {
-      throw new Error(`Server responded ${data}`);
+      throw new Error(`Server responded ${dataFetched}`);
     }
   } catch (err) {
     console.error(err);
