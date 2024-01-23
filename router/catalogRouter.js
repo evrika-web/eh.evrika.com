@@ -47,11 +47,11 @@ router.post("/catalog/products", async (req, res) => {
       (page = page),
       (sort = sort),
       (limit = limit)
-    );
+      );
     var category = await getOneFromCollectionByFilter(
       "categories",
-      (filter = { id: body.category_id.toString() })
-    );
+      (filter = { id: Number(body.category_id) })
+      );
     let products = [];
     if (!Array.isArray(data) && data.result.length > 0) {
       data.result.forEach((element) => {
@@ -78,7 +78,7 @@ router.post("/catalog/products", async (req, res) => {
             : 0,
           brand: element.vendor,
           category_id: element.categoryId,
-          category_name: category.value,
+          category_name: category.name,
           variant: "",
           is_preorder: false,
           badges: [],
@@ -106,7 +106,9 @@ router.post("/catalog/products", async (req, res) => {
         to: metaTo,
         total: data.count,
       };
-      res.json({ data: products, links: links, meta: meta });
+      console.log("🚀 ~ router.post ~ meta:", meta)
+      console.log("🚀 ~ router.post ~ meta:", products,   meta )
+      res.json({ data: products,  meta: meta });
     } else {
       res
         .status(404)
