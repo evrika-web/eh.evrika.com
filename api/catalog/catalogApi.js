@@ -8,6 +8,14 @@ const {
 } = require("../../database/mongoDb/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
 
+//add logger
+const SimpleNodeLogger = require("simple-node-logger");
+opts = {
+  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalogAPI.log`,
+  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
+};
+const log = SimpleNodeLogger.createSimpleLogger(opts);
+
 async function updateData() {
   try {
     let externalURL =
@@ -107,6 +115,7 @@ async function updateCategories() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/categories/menutree", false);
+    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update categories ", dataFetched);
     let data = dataFetched.data
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
@@ -153,6 +162,7 @@ async function updateCities() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/cities", false);
+    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update cities ", dataFetched);
     let data = dataFetched.data
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
@@ -199,6 +209,7 @@ async function updateBranches() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/branches", false);
+    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update branches ", dataFetched);
     let data = dataFetched.data
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
@@ -244,7 +255,8 @@ async function updateBranches() {
 async function updateCosts() {
   try {
     let dataFetched;
-    dataFetched = await dataFetching("http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost", true, {});
+    dataFetched = await dataFetching("http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost", true, {});    
+    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update costs ", dataFetched);
     let data = dataFetched.data
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
