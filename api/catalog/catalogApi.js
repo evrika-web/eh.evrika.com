@@ -28,7 +28,6 @@ async function updateData() {
       externalURL,
       (config = {
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
           "Accept-Encoding": "*",
         },
       })
