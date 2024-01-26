@@ -28,16 +28,17 @@ async function dataFetching(url, customURL, configURL) {
     await axios(`${backendUrl}`, config)
       .then(async (result) => {
         data = result.data.data;
+        log.info("[SUCCESS] ", data);
         if (result.data.meta) {
           for (var i = 2; i <= result.data.meta.last_page; i++) {
             await axios(`${backendUrl}?page=${i}`, config)
               .then((result) => {
                 data = data.concat(result.data.data);
-                log.info('[SUCCESS] ', data)
+                log.info("[SUCCESS] ", data);
               })
               .catch((err) => {
-                log.error("[URL] ", backendUrl)
-                log.error("[AXIOS] ", err.message)
+                log.error("[URL] ", backendUrl);
+                log.error("[AXIOS] ", err.message);
                 console.error("[AXIOS] ", err.message);
                 throw new Error(err.message.toString());
               });
@@ -45,7 +46,9 @@ async function dataFetching(url, customURL, configURL) {
         }
       })
       .catch((err) => {
-        console.error("[AXIOS]", err.message);
+        log.error("[URL] ", backendUrl);
+        log.error("[AXIOS] ", err.message);
+        console.error("[AXIOS] ", err.message);
         throw new Error(err.message.toString());
       });
     return { data: data, status: 200 };
