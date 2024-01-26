@@ -1,4 +1,12 @@
 const { default: axios } = require("axios");
+//add logger
+const SimpleNodeLogger = require("simple-node-logger");
+const moment = require("moment");
+opts = {
+  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-data-fetching.log`,
+  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
+};
+const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function dataFetching(url, customURL, configURL) {
   try {
@@ -25,9 +33,12 @@ async function dataFetching(url, customURL, configURL) {
             await axios(`${backendUrl}?page=${i}`, config)
               .then((result) => {
                 data = data.concat(result.data.data);
+                log.info('[SUCCESS] ', data)
               })
               .catch((err) => {
-                console.error("[AXIOS]", err.message);
+                log.error("[URL] ", backendUrl)
+                log.error("[AXIOS] ", err.message)
+                console.error("[AXIOS] ", err.message);
                 throw new Error(err.message.toString());
               });
           }
