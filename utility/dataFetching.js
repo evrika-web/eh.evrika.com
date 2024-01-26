@@ -38,8 +38,8 @@ async function dataFetching(url, customURL, configURL) {
               })
               .catch((err) => {
                 log.error("[URL] ", backendUrl);
-                log.error("[AXIOS] ", err.message);
-                console.error("[AXIOS] ", err.message);
+                log.error("[AXIOS] ", err);
+                console.error("[AXIOS] ", err);
                 throw new Error(err.message.toString());
               });
           }
@@ -47,8 +47,8 @@ async function dataFetching(url, customURL, configURL) {
       })
       .catch((err) => {
         log.error("[URL] ", backendUrl);
-        log.error("[AXIOS] ", err.message);
-        console.error("[AXIOS] ", err.message);
+        log.error("[AXIOS] ", err);
+        console.error("[AXIOS] ", err);
         throw new Error(err.message.toString());
       });
     return { data: data, status: 200 };
