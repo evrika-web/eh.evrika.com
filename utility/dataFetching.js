@@ -17,6 +17,8 @@ async function dataFetching(url, customURL, configURL) {
       config = {
         headers: {
           Authorization: "Bearer " + process.env.BACKEND_TOKEN || "token-key",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept-Encoding": "*",
         },
       };
       backendUrl += url;
