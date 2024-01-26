@@ -24,8 +24,7 @@ async function updateData() {
       "https://site.evrika.com/facebook/data-all-new.xml";
     let XMLdata;
     let jObj = {};
-    await axios(externalURL, config={"Content-Type": "application/x-www-form-urlencoded",
-    "Accept-Encoding": "*",})
+    await axios(externalURL)
       .then((result) => {
         XMLdata = result.data;
         const parser = new XMLParser({
