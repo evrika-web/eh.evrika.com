@@ -24,7 +24,15 @@ async function updateData() {
       "https://site.evrika.com/facebook/data-all-new.xml";
     let XMLdata;
     let jObj = {};
-    await axios(externalURL)
+    await axios(
+      externalURL,
+      (config = {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept-Encoding": "*",
+        },
+      })
+    )
       .then((result) => {
         XMLdata = result.data;
         const parser = new XMLParser({
@@ -37,7 +45,7 @@ async function updateData() {
       })
       .catch((err) => {
         console.error("[AXIOS]", err.message);
-        return ({ error: err.toString(), status:500 });
+        return { error: err.toString(), status: 500 };
       });
     let products = jObj.yml_catalog.shop.offers.offer;
     const allDBids = await getAllFromCollection(
@@ -116,8 +124,12 @@ async function updateCategories() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/categories/menutree", false);
-    log.info(moment().format("HH:mm DD-MM-YYYY"), " Update categories ", dataFetched);
-    let data = dataFetched.data
+    log.info(
+      moment().format("HH:mm DD-MM-YYYY"),
+      " Update categories ",
+      dataFetched
+    );
+    let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const allDBids = await getAllFromCollection(
@@ -163,8 +175,12 @@ async function updateCities() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/cities", false);
-    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update cities ", dataFetched);
-    let data = dataFetched.data
+    log.info(
+      moment().format("HH:mm DD-MM-YYYY"),
+      "Update cities ",
+      dataFetched
+    );
+    let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const allDBids = await getAllFromCollection(
@@ -210,8 +226,12 @@ async function updateBranches() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/branches", false);
-    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update branches ", dataFetched);
-    let data = dataFetched.data
+    log.info(
+      moment().format("HH:mm DD-MM-YYYY"),
+      "Update branches ",
+      dataFetched
+    );
+    let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const allDBids = await getAllFromCollection(
@@ -256,9 +276,13 @@ async function updateBranches() {
 async function updateCosts() {
   try {
     let dataFetched;
-    dataFetched = await dataFetching("http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost", true, {});    
+    dataFetched = await dataFetching(
+      "http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost",
+      true,
+      {}
+    );
     log.info(moment().format("HH:mm DD-MM-YYYY"), "Update costs ", dataFetched);
-    let data = dataFetched.data
+    let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const allDBids = await getAllFromCollection(
@@ -300,4 +324,10 @@ async function updateCosts() {
     return { status: 500, error: err.toString() };
   }
 }
-module.exports = { updateData, updateCategories, updateCities, updateBranches, updateCosts };
+module.exports = {
+  updateData,
+  updateCategories,
+  updateCities,
+  updateBranches,
+  updateCosts,
+};
