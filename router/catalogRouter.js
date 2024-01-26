@@ -321,10 +321,14 @@ router.get("/update-products", async (req, res) => {
   try {
     let catalogUpdate = await updateData();
     if (catalogUpdate.status === 200)
-      log.info("Update products log ", {
+      {log.info("Update products log ", {
         created: catalogUpdate.created,
         updated: catalogUpdate.updated,
       });
+      res.status(200).json({
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });}
     else {
       throw new Error("Update products data error: ", catalogUpdate);
     }
