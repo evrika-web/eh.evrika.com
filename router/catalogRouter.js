@@ -60,7 +60,7 @@ router.post("/catalog/products", async (req, res) => {
         );
         let tempProduct = {
           id: parseInt(element.id),
-          guid: "",
+          guid: element.guid,
           slug: element.slug,
           url: element.url,
           vendor_code: element.vendorCode,
@@ -81,8 +81,8 @@ router.post("/catalog/products", async (req, res) => {
           category_name: category.name,
           variant: "",
           is_preorder: false,
-          badges: [],
-          gift: [],
+          badges: element.badges,
+          gift: element.gifts,
           position: -1,
           images: [element.picture],
         };
@@ -106,8 +106,6 @@ router.post("/catalog/products", async (req, res) => {
         to: metaTo,
         total: data.count,
       };
-      console.log("🚀 ~ router.post ~ meta:", meta)
-      console.log("🚀 ~ router.post ~ meta:", products,   meta )
       res.json({ data: products,  meta: meta });
     } else {
       res
@@ -254,6 +252,9 @@ router.post("/catalog/filters", async (req, res) => {
       ).values(),
     ];
     for (let spec of specsObj) {
+      
+      if(spec.name==='badge_0' ||  spec.name === 'badge_1' || spec.name === 'badge_2' || spec.name === 'badge_3' || spec.name === 'badge_4'){continue;}
+
       let options = [];
       let specslugData = spec.specslug;
       const foundValues = allFilters.filter(
@@ -265,6 +266,7 @@ router.post("/catalog/filters", async (req, res) => {
         filteredObj.url = process.env.FRONT_URL || "https://evrika.com";
         filteredObj.name = foundValues[index].value;
         filteredObj.value = foundValues[index].valueslug;
+        filteredObj.sort = foundValues[index].valuesort;
         if (
           availableFilters.find(
             ({ valueslug }) => valueslug == foundValues[index].valueslug
@@ -287,9 +289,33 @@ router.post("/catalog/filters", async (req, res) => {
         }
         options.push(filteredObj);
       }
-      const optionsSorted = options.sort(
-        (a, b) => Number(a.disabled) - Number(b.disabled)
+      let disabledFilters = []
+      let selectedFilters = []
+      let otherfilters = []
+      options.map(e=>{
+        if(e.disabled){
+          disabledFilters.push(e)
+        } else if(!e.disabled &&  e.selected){
+          selectedFilters.push(e)
+        }else{
+          otherfilters.push(e)
+        }
+      })
+      
+      let optionsSorted = []
+      let selectedFiltersSorted = selectedFilters.sort(
+        (a, b) => Number(a.sort) - Number(b.sort)
       );
+      optionsSorted = [...optionsSorted, ...selectedFiltersSorted]
+      let otherfiltersSorted = otherfilters.sort(
+        (a, b) => Number(a.sort) - Number(b.sort)
+      );
+      optionsSorted = [...optionsSorted, ...otherfiltersSorted]
+      let disabledFiltersSorted = disabledFilters.sort(
+        (a, b) => Number(a.sort) - Number(b.sort)
+      );
+      optionsSorted = [...optionsSorted, ...disabledFiltersSorted]
+
       filtersFinal.push({
         type: "checkbox",
         spec_id: spec.specid,
