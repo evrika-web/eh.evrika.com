@@ -5,6 +5,8 @@ const {
   insertOneData,
   replaceOne,
   insertManyData,
+  update,
+  updateOne,
 } = require("../../database/mongoDb/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
 
@@ -62,25 +64,56 @@ async function updateData() {
     let updateData = [];
     let createData = [];
     let updatedCount = 0;
-
+    let timeUpdate = moment().format("YYYY-MM-DD h:mm");
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = parseInt(element.id);
-      element.slug = element.url.slice(27, element.url.indexOf("/p"));
+      element.available = Boolean(element.available)
+      let cuttedUrl = element.url.split('/catalog/')[1]
+      element.slug = cuttedUrl.slice(0, cuttedUrl.indexOf("/p"));
+      element.gifts = []
+      element.badges = []
       if (element.param) {
         element.specs = element.param;
         for (let index = 0; index < element.specs.length; index++) {
           delete element.specs[index].priority;
-          if (element.specs[index].badge_0) {
-            delete element.specs[index].badge_0;
-          } else if (element.specs[index].badge_1) {
-            delete element.specs[index].badge_1;
-          } else if (element.specs[index].badge_2) {
-            delete element.specs[index].badge_2;
-          } else if (element.specs[index].badge_3) {
-            delete element.specs[index].badge_3;
-          } else if (element.specs[index].badge_4) {
-            delete element.specs[index].badge_4;
+          if (element.specs[index].name==="badge_0") {
+            let badge = element.specs[index].value.split('||')
+            element.specs[index].value=badge[0]
+            element.badges.push(element.specs[index]);
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="badge_1") {
+            let badge = element.specs[index].value.split('||')
+            element.specs[index].value=badge[0]
+            element.badges.push(element.specs[index]);
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="badge_2") {
+            let badge = element.specs[index].value.split('||')
+            element.specs[index].value=badge[0]
+            element.badges.push(element.specs[index]);
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="badge_3") {
+            let badge = element.specs[index].value.split('||')
+            element.specs[index].value=badge[0]
+            element.badges.push(element.specs[index]);
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="badge_4") {
+            let badge = element.specs[index].value.split('||')
+            element.specs[index].value=badge[0]
+            element.badges.push(element.specs[index]);
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="gifts") {
+            element.gifts.push(element.specs[index])
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="mpn") {
+            element.mpn = element.specs[index].value
+            element.specs.splice(index,1)
+          } else if (element.specs[index].name==="ean") {
+            element.ean = element.specs[index].value
+            element.specs.splice(index,1)
+          } else{
+            element.specs[index].specid = parseInt(element.specs[index].specid)
+            element.specs[index].valuesort = parseInt(element.specs[index].valuesort)
           }
         }
         delete element.param;
@@ -95,19 +128,23 @@ async function updateData() {
         }
         delete element.locations.location;
       }
-      if (element.badges === "") {
-        element.badges = [];
-      } else if (Array.isArray(element.badges)) {
-      }
       if (allDBidsMapped.includes(element.id)) {
+        element.updated = timeUpdate;
         updateData.push(element);
         await replaceOne("products", element, { id: element.id });
         updatedCount += 1;
       } else {
+        element.created = timeUpdate;
+        element.updated = timeUpdate;
         createData.push(element);
       }
     }
-
+    let missingIDs = allDBidsMapped.filter(id => !products.some(obj => obj.id === id));
+    console.log("🚀 ~ updateData ~ missingIDs:", missingIDs)
+    missingIDs.map(async (e) => {
+      await updateOne("products", { $set:{available:false, updated:timeUpdate}}, { _id: parseInt(e) })
+      updatedCount += 1;
+    	})
     let resultCreate = 0;
     if (createData.length !== 0) {
       resultCreate = await insertManyData("products", createData);

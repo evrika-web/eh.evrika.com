@@ -330,7 +330,8 @@ router.get("/update-products", async (req, res) => {
         updated: catalogUpdate.updated,
       });}
     else {
-      throw new Error("Update products data error: ", catalogUpdate);
+      console.log("🚀 ~ router.get ~ catalogUpdate:", catalogUpdate)
+      throw new Error("Update products data error: ", catalogUpdate.error);
     }
   } catch (err) {
     console.log(err);
