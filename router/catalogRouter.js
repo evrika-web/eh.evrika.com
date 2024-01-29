@@ -65,7 +65,7 @@ router.post("/catalog/products", async (req, res) => {
           url: element.url,
           vendor_code: element.vendorCode,
           name: element.name,
-          bank_coefficient_month: 12,
+          bank_coefficient_month: process.env.INSTALLMENT_TERM || 12,
           bank_coefficient: "0,0833333333",
           cost: element.price,
           old_cost: element?.oldprice,
@@ -256,13 +256,6 @@ router.post("/catalog/filters", async (req, res) => {
     for (let spec of specsObj) {
       let options = [];
       let specslugData = spec.specslug;
-      if (
-        spec.name === "badge_0" ||
-        spec.name === "badge_1" ||
-        spec.name === "badge_2" ||
-        spec.name === "badge_3"
-      )
-        continue;
       const foundValues = allFilters.filter(
         ({ specslug }) => specslug === specslugData
       );
