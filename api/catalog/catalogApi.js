@@ -64,56 +64,83 @@ async function updateData() {
     let updateData = [];
     let createData = [];
     let updatedCount = 0;
-    let timeUpdate = moment().format("YYYY-MM-DD h:mm");
+    let timeUpdate = moment();
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = parseInt(element.id);
-      element.available = Boolean(element.available)
-      let cuttedUrl = element.url.split('/catalog/')[1]
+      element.available = Boolean(element.available);
+      let cuttedUrl = element.url.split("/catalog/")[1];
       element.slug = cuttedUrl.slice(0, cuttedUrl.indexOf("/p"));
-      element.gifts = []
-      element.badges = []
+      element.gifts = [];
+      element.badges = [];
       if (element.param) {
         element.specs = element.param;
         for (let index = 0; index < element.specs.length; index++) {
           delete element.specs[index].priority;
-          if (element.specs[index].name==="badge_0") {
-            let badge = element.specs[index].value.split('||')
-            element.specs[index].value=badge[0]
-            element.badges.push(element.specs[index]);
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="badge_1") {
-            let badge = element.specs[index].value.split('||')
-            element.specs[index].value=badge[0]
-            element.badges.push(element.specs[index]);
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="badge_2") {
-            let badge = element.specs[index].value.split('||')
-            element.specs[index].value=badge[0]
-            element.badges.push(element.specs[index]);
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="badge_3") {
-            let badge = element.specs[index].value.split('||')
-            element.specs[index].value=badge[0]
-            element.badges.push(element.specs[index]);
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="badge_4") {
-            let badge = element.specs[index].value.split('||')
-            element.specs[index].value=badge[0]
-            element.badges.push(element.specs[index]);
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="gifts") {
-            element.gifts.push(element.specs[index])
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="mpn") {
-            element.mpn = element.specs[index].value
-            element.specs.splice(index,1)
-          } else if (element.specs[index].name==="ean") {
-            element.ean = element.specs[index].value
-            element.specs.splice(index,1)
-          } else{
-            element.specs[index].specid = parseInt(element.specs[index].specid)
-            element.specs[index].valuesort = parseInt(element.specs[index].valuesort)
+          if (element.specs[index].name === "badge_0") {
+            let badge = element.specs[index].value.split("||");
+            element.badges.push({
+              id: 0,
+              sort: 0,
+              published: true,
+              color: element.specs[index].color,
+              name: badge[0],
+            });
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "badge_1") {
+            let badge = element.specs[index].value.split("||");
+            element.badges.push({
+              id: 1,
+              sort: 1,
+              published: true,
+              color: element.specs[index].color,
+              name: badge[0],
+            });
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "badge_2") {
+            let badge = element.specs[index].value.split("||");
+            element.badges.push({
+              id: 2,
+              sort: 2,
+              published: true,
+              color: element.specs[index].color,
+              name: badge[0],
+            });
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "badge_3") {
+            let badge = element.specs[index].value.split("||");
+            element.badges.push({
+              id: 3,
+              sort: 3,
+              published: true,
+              color: element.specs[index].color,
+              name: badge[0],
+            });
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "badge_4") {
+            let badge = element.specs[index].value.split("||");
+            element.badges.push({
+              id: 4,
+              sort: 4,
+              published: true,
+              color: element.specs[index].color,
+              name: badge[0],
+            });
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "gifts") {
+            element.gifts.push(element.specs[index]);
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "mpn") {
+            element.mpn = element.specs[index].value;
+            element.specs.splice(index, 1);
+          } else if (element.specs[index].name === "ean") {
+            element.ean = element.specs[index].value;
+            element.specs.splice(index, 1);
+          } else {
+            element.specs[index].specid = parseInt(element.specs[index].specid);
+            element.specs[index].valuesort = parseInt(
+              element.specs[index].valuesort
+            );
           }
         }
         delete element.param;
@@ -139,12 +166,18 @@ async function updateData() {
         createData.push(element);
       }
     }
-    let missingIDs = allDBidsMapped.filter(id => !products.some(obj => obj.id === id));
-    console.log("🚀 ~ updateData ~ missingIDs:", missingIDs)
+    let missingIDs = allDBidsMapped.filter(
+      (id) => !products.some((obj) => obj.id === id)
+    );
+    console.log("🚀 ~ updateData ~ missingIDs:", missingIDs);
     missingIDs.map(async (e) => {
-      await updateOne("products", { $set:{available:false, updated:timeUpdate}}, { _id: parseInt(e) })
+      await updateOne(
+        "products",
+        { $set: { available: false, updated: timeUpdate } },
+        { _id: parseInt(e) }
+      );
       updatedCount += 1;
-    	})
+    });
     let resultCreate = 0;
     if (createData.length !== 0) {
       resultCreate = await insertManyData("products", createData);

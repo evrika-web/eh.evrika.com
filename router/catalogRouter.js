@@ -261,12 +261,23 @@ router.post("/catalog/filters", async (req, res) => {
         ({ specslug }) => specslug === specslugData
       );
       for (let index in foundValues) {
+        
+
         var filteredObj = {};
         filteredObj.id = 0;
         filteredObj.url = process.env.FRONT_URL || "https://evrika.com";
         filteredObj.name = foundValues[index].value;
         filteredObj.value = foundValues[index].valueslug;
         filteredObj.sort = foundValues[index].valuesort;
+
+        if (
+          options.find(
+            ({ value }) => value == filteredObj.value
+          ) != undefined
+        ){
+          continue;
+        }
+
         if (
           availableFilters.find(
             ({ valueslug }) => valueslug == foundValues[index].valueslug
@@ -328,7 +339,6 @@ router.post("/catalog/filters", async (req, res) => {
         isTrueFale: false,
       });
     }
-
     searchLog("success");
     res.status(200).json(filtersFinal);
   } catch (err) {

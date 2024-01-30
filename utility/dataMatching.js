@@ -1,18 +1,18 @@
 function catalogMatching(dirtyData, type = "products") {
   var cleanData = {};
   cleanData.$and = [];
-  
+
   //main filters matching
   if (dirtyData.filters && Object.keys(dirtyData.filters).length !== 0) {
     cleanData.price = {};
     for (const key in dirtyData.filters) {
       if (key === "cost_to") {
-        if(type!=='prices')
-        cleanData.price.$lte = parseInt(dirtyData.filters.cost_to[0]);
+        if (type !== "prices")
+          cleanData.price.$lte = parseInt(dirtyData.filters.cost_to[0]);
         delete cleanData.cost_to;
       } else if (key === "cost_from") {
-        if(type!=='prices')
-        cleanData.price.$gte = parseInt(dirtyData.filters.cost_from[0]);
+        if (type !== "prices")
+          cleanData.price.$gte = parseInt(dirtyData.filters.cost_from[0]);
         delete cleanData.cost_from;
       } else if (key === "brand") {
         var tempObj = { $or: [] };
@@ -32,22 +32,23 @@ function catalogMatching(dirtyData, type = "products") {
     }
     if (Object.keys(cleanData.price).length === 0) {
       delete cleanData.price;
-    }
-    else{
+    } else {
       cleanData.$and.push(cleanData.price);
       delete cleanData.price;
     }
   }
 
   //other filters matching
-  cleanData.$and.push({categoryId:parseInt(dirtyData.category_id) || 234});
-  cleanData.$and.push({available:true });
-  cleanData.$and.push({["locations.id"]:dirtyData.city_id.toString() || "1"});
+  cleanData.$and.push({ categoryId: parseInt(dirtyData.category_id) || 234 });
+  cleanData.$and.push({ available: true });
+  cleanData.$and.push({
+    ["locations.id"]: dirtyData.city_id.toString() || "1",
+  });
 
   if (cleanData.$and.length === 0) {
     delete cleanData.$and;
   }
-  
+
   return cleanData;
 }
 
