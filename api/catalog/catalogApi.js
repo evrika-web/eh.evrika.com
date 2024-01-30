@@ -64,7 +64,7 @@ async function updateData() {
     let updateData = [];
     let createData = [];
     let updatedCount = 0;
-    let timeUpdate = moment();
+    let timeUpdate = moment().format();
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = parseInt(element.id);
