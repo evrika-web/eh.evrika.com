@@ -39,7 +39,10 @@ function catalogMatching(dirtyData, type = "products") {
   }
 
   //other filters matching
-  cleanData.$and.push({ categoryId: parseInt(dirtyData.category_id) || 234 });
+  if(type!=="product-day")
+  {
+    cleanData.$and.push({ categoryId: parseInt(dirtyData.category_id) || 234 });
+  }
   cleanData.$and.push({ available: true });
   cleanData.$and.push({
     ["locations.id"]: dirtyData.city_id.toString() || "1",

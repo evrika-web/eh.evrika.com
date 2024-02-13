@@ -21,13 +21,14 @@ function getMongoApiRouter(
   const router = express.Router();
   router.get(multipleRoute + "/:page", async (req, res) => {
     const { page } = req.params;
-    const filter = req.query;
+    const query = req.query;
     try {
       const result = await getAllFromCollection(
         collectionName,
         getHiddenFieldsObject(hiddenCollectionFields),
-        filter,
-        page
+        filter = query.filter,
+        page, 
+        limit= parseInt(query.limit) || 24
       );
       res.json(result);
     } catch (err) {
@@ -53,7 +54,6 @@ function getMongoApiRouter(
   });
 
   router.put(singleRoute + "/:id", async (req, res) => {
-    console.log("🚀 ~ file: mongoApi.js:57 ~ router.put ~ req:", req)
     let { id } = req.params;
     if(collectionName==='products'){
         id=parseInt(id)
@@ -74,7 +74,6 @@ function getMongoApiRouter(
   });
 
   router.post(singleRoute, async (req, res) => {
-    console.log("🚀 ~ file: mongoApi.js:78 ~ router.post ~ req:", req)
     try {
       let insertedData = req.body;
       if (postBodyModifier) {

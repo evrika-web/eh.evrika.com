@@ -359,7 +359,6 @@ router.get("/update-products", async (req, res) => {
         updated: catalogUpdate.updated,
       });}
     else {
-      console.log("🚀 ~ router.get ~ catalogUpdate:", catalogUpdate)
       throw new Error("Update products data error: ", catalogUpdate.error);
     }
   } catch (err) {
@@ -424,6 +423,27 @@ router.get("/update-branches", async (req, res) => {
       });
     } else {
       throw new Error("Update branches data error: ", catalogUpdate.error);
+    }
+  } catch (err) {
+    console.log("CATCH: " + err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+
+router.get("/update-stocks", async (req, res) => {
+  try {
+    let catalogUpdate = await updateStocks();
+    if (catalogUpdate.status === 200) {
+      log.info("Update stocks log ", {
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+      res.status(200).send({
+        created: catalogUpdate.created,
+        updated: catalogUpdate.updated,
+      });
+    } else {
+      throw new Error("Update stocks data error: ", catalogUpdate.error);
     }
   } catch (err) {
     console.log("CATCH: " + err);

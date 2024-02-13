@@ -21,7 +21,6 @@ schedule.scheduleJob(ruleLogs, async () => {
   try {
     const dateToDelete = moment().subtract(7, "days").format("DD-MM-YYYY");
     fs.readdir("logs/", (err, files) => {
-      // console.log("files ", files);
       files.forEach((file) => {
         var fileDate = file.slice(0, 10);
         if (fileDate <= dateToDelete) {

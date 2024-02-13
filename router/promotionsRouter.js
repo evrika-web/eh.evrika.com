@@ -19,7 +19,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 router.get("/active-promotions-data", async (req, res) => {
   try {
     var activePromotionsData = await promotionsFunctions.getActivePromotions('data');
-    console.log(activePromotionsData);
+
     log.info("/active-promotions-data result: " + JSON.stringify(activePromotionsData));
     res.json({activePromotionsData}) ;
   } catch (err) {
@@ -32,7 +32,6 @@ router.get("/active-promotions-data", async (req, res) => {
 router.get("/active-promotions-id", async (req, res) => {
   try {
     var activePromotionsData = await promotionsFunctions.getActivePromotions('id');
-    console.log(activePromotionsData);
     log.info("/active-promotions-id result: " + JSON.stringify(activePromotionsData));
     res.json({activePromotionsData}) ;
   } catch (err) {

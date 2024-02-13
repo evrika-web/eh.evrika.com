@@ -46,7 +46,7 @@ async function updateData() {
       })
       .catch((err) => {
         console.error("[AXIOS]", err.message);
-        return { error: err.toString(), status: 500 };
+        return { error: err, status: 500 };
       });
     let products = jObj.yml_catalog.shop.offers.offer;
     const allDBids = await getAllFromCollection(
@@ -64,7 +64,7 @@ async function updateData() {
     let updateData = [];
     let createData = [];
     let updatedCount = 0;
-    let timeUpdate = moment().format();
+    let timeUpdate = new Date(moment().format());
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = parseInt(element.id);
@@ -169,7 +169,6 @@ async function updateData() {
     let missingIDs = allDBidsMapped.filter(
       (id) => !products.some((obj) => obj.id === id)
     );
-    console.log("🚀 ~ updateData ~ missingIDs:", missingIDs);
     missingIDs.map(async (e) => {
       await updateOne(
         "products",
@@ -185,7 +184,7 @@ async function updateData() {
     return { status: 200, created: resultCreate, updated: updatedCount };
   } catch (err) {
     console.error(err);
-    return { status: 500, error: err.toString() };
+    return { status: 500, error: err };
   }
 }
 
@@ -237,7 +236,7 @@ async function updateCategories() {
     }
   } catch (err) {
     console.error(err);
-    return { status: 500, error: err.toString() };
+    return { status: 500, error: err };
   }
 }
 async function updateCities() {
@@ -288,10 +287,10 @@ async function updateCities() {
     }
   } catch (err) {
     console.error(err);
-    return { status: 500, error: err.toString() };
+    return { status: 500, error: err };
   }
 }
-async function updateBranches() {
+async function updateBranches() { 
   try {
     let dataFetched;
     dataFetched = await dataFetching("/branches", false);
@@ -339,64 +338,13 @@ async function updateBranches() {
     }
   } catch (err) {
     console.error(err);
-    return { status: 500, error: err.toString() };
+    return { status: 500, error: err };
   }
 }
-async function updateCosts() {
-  try {
-    let dataFetched;
-    dataFetched = await dataFetching(
-      "http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost",
-      true,
-      {}
-    );
-    log.info(moment().format("HH:mm DD-MM-YYYY"), "Update costs ", dataFetched);
-    let data = dataFetched.data;
-    if (dataFetched.status === 200) {
-      if (Array.isArray(data) && data.length !== 0) {
-        const allDBids = await getAllFromCollection(
-          "costs",
-          (fields = { _id: 1 }),
-          (filter = {}),
-          (page = "all")
-        );
-        let allDBidsMapped = [];
-        if (Array.isArray(allDBids.result)) {
-          allDBids.result.map((e) => {
-            allDBidsMapped.push(e._id);
-          });
-        }
-        let updatedCount = 0;
-        let createdCount = 0;
-        for (var i in data) {
-          var item = data[i];
-          item._id = item.id;
-          // If the cities is not on DB yet, we add it to DB
-          if (!allDBidsMapped.includes(item.id)) {
-            await insertOneData("costs", item);
-            createdCount += 1;
-          } else {
-            // If the cities is already on DB but has changed its name or parent, we update it
-            await replaceOne("costs", item, { _id: item._id });
-            updatedCount += 1;
-          }
-        }
-        return { status: 200, created: createdCount, updated: updatedCount };
-      } else {
-        throw new Error("No costs received from the server");
-      }
-    } else {
-      throw new Error(`Server responded ${dataFetched}`);
-    }
-  } catch (err) {
-    console.error(err);
-    return { status: 500, error: err.toString() };
-  }
-}
+
 module.exports = {
   updateData,
   updateCategories,
   updateCities,
   updateBranches,
-  updateCosts,
 };

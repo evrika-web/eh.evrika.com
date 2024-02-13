@@ -20,7 +20,7 @@ const router=[
   getMongoApiRouter('/branch', '/branches', 'branches', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
-  getMongoApiRouter('/product-of-the-day', '/products-of-the-day', 'product_of_the_day', [], {
+  getMongoApiRouter('/product-of-the-day', '/products-of-the-day', 'products', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
   getMongoApiRouter('/spec_value', '/spec_values', 'spec_values', [], {
