@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js"
+    "server test": "nodemon server.js",
+    "server": "node server.js"
   },
   "author": "Shakayev Adil",
   "license": "none",
