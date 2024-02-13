@@ -113,7 +113,7 @@ router.post("/catalog/products", async (req, res) => {
         .send({ error: "There is no products matching your filters" });
     }
   } catch (err) {
-    res.status(500).send({ error: err.toString() });
+    res.status(404).send({ error: err.toString() });
   }
 });
 
@@ -342,7 +342,7 @@ router.post("/catalog/filters", async (req, res) => {
     searchLog("success");
     res.status(200).json(filtersFinal);
   } catch (err) {
-    res.status(500).send({ error: err.toString() });
+    res.status(404).send({ error: err.toString() });
   }
 });
 
