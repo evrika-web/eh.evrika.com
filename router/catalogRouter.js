@@ -35,10 +35,6 @@ router.post("/catalog/products", async (req, res) => {
   var page = body.page || 1;
   var limit = body.limit || 23;
   var conditions = catalogMatching(body, "products");
-  console.log(
-    "🚀 ~ file: searchRouter.js:28 ~ router.post ~ conditions:",
-    JSON.stringify(conditions)
-  );
   try {
     var data = await getAllFromCollection(
       "products",
@@ -122,10 +118,6 @@ router.post("/catalog/filters", async (req, res) => {
   var filtersData = req.body.filters;
   var categoryData = req.body.category_id;
   var conditions = catalogMatching(body, "filters");
-  console.log(
-    "🚀 ~ file: searchRouter.js:128 ~ router.post ~ conditions:",
-    JSON.stringify(conditions)
-  );
   var conditionsForPrice = catalogMatching(body, "prices");
   try {
     let filtersFinal = [];

@@ -10,6 +10,7 @@ const moment = require("moment");
 const promotionsRouter = require("./router/promotionsRouter");
 const catalogMainRouter = require("./router/catalogMainRouter");
 const catalogRouter = require("./router/catalogRouter");
+const halykMarketRouter = require("./router/halykMarketRouter");
 const port = process.env.PORT;
 const host = process.env.HOST;
 const dbName = process.env.MONGO_DB_NAME || "search-system";
@@ -99,6 +100,9 @@ app.get("/max-bonus/:article", async (req, res) => {
 //Подключение запросов для каталога
 app.use(catalogMainRouter);
 app.use(catalogRouter);
+
+//Подключение запросов по halyk market
+app.use("/halyk", halykMarketRouter);
 
 //Определение порта и хоста для сервера
 app.listen(port, host, async () => {

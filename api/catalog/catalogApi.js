@@ -296,7 +296,7 @@ async function updateBranches() {
     dataFetched = await dataFetching("/branches", false);
     log.info(
       moment().format("HH:mm DD-MM-YYYY"),
-      "Update branches ",
+      " Update branches ",
       dataFetched
     );
     let data = dataFetched.data;

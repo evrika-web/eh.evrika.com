@@ -13,7 +13,7 @@ async function dataFetching(url, customURL, configURL) {
     let backendUrl;
     let config;
     if (!customURL) {
-      backendUrl = process.env.BACKEND_URL || "htts://evrika.com/api/v1";
+      backendUrl = process.env.BACKEND_URL || "htts://back.evrika.com/api/v1";
       config = {
         headers: {
           Authorization: "Bearer " + process.env.BACKEND_TOKEN || "token-key",
@@ -29,7 +29,11 @@ async function dataFetching(url, customURL, configURL) {
     let data;
     await axios(`${backendUrl}`, config)
       .then(async (result) => {
-        data = result.data.data;
+        if(url==='/branches'){
+          data = result.data.branches;
+        }else{
+          data = result.data.data;
+        }
         log.info("[SUCCESS] ", data);
         if (result.data.meta) {
           for (var i = 2; i <= result.data.meta.last_page; i++) {
