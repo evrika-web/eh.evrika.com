@@ -1,5 +1,5 @@
 const express = require("express");
-const { getHiddenFieldsObject } = require("../../database/mongoDb/mongoFilter");
+const { getHiddenFieldsObject } = require("../database/mongoDb/mongoFilter");
 const {
   getAllFromCollection,
   deleteOne,
@@ -7,7 +7,7 @@ const {
   updateOne,
   insertOneData,
   getOneFromCollectionByFilter,
-} = require("../../database/mongoDb/mongoQuerie");
+} = require("../database/mongoDb/mongoQuerie");
 
 function getMongoApiRouter(
   singleRoute,
@@ -27,10 +27,16 @@ function getMongoApiRouter(
         collectionName,
         getHiddenFieldsObject(hiddenCollectionFields),
         filter = query.filter,
-        page, 
+        page,
+        sort=query.sort || "", 
         limit= parseInt(query.limit) || 24
       );
-      res.json(result);
+      if(result){
+        res.json(result);
+      }
+      else{
+        res.status(404).send({ error: 'Not found' });
+      }
     } catch (err) {
       console.log(err);
       res.status(404).send({ error: err.toString() });
@@ -103,7 +109,12 @@ function getMongoApiRouter(
           additionalData: await additionalDataQuery(),
         };
       }
-      res.json({ result: data });
+      if(data){
+        res.json({ result: data });
+      }
+      else{
+        res.status(404).send({ error: "Not found" });
+      }
     } catch (err) {
       console.log(err);
       res.status(404).send({ error: err.toString() });

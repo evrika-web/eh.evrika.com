@@ -39,7 +39,7 @@ async function getAllFromCollection(collectionName, fields = {}, filter = {}, pa
             sort: sort
           }).project(fields);
         const result = await cursor.toArray();
-        return {result:result, count: count};
+        return {result:result, count: count, pages: Math.ceil(count/limit)};
     }    
 }
 

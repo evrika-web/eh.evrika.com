@@ -11,13 +11,14 @@ const {
 const SimpleNodeLogger = require("simple-node-logger");
 const moment = require("moment");
 opts = {
-  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalogAPI.log`,
+  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-HalykAPI.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function updateDataFromXML() {
   try {
+    //parse from xml
     let externalURL =
       process.env.HALYK_XML_DATA_URL ||
       "http://help.evrika.com/exchange/evrika_halykbank/xml/";
@@ -46,6 +47,8 @@ async function updateDataFromXML() {
         return { error: err, status: 500 };
       });
     let products = jObj.goods.good;
+
+    //get all ids from database
     const allDBids = await getAllFromCollection(
       "halyk_market",
       (fields = { _id: 1 }),
@@ -58,6 +61,13 @@ async function updateDataFromXML() {
         allDBidsMapped.push(e._id);
       });
     }
+    //get all pickup points
+    const allPickupPoints = await getAllFromCollection(
+      "pickup_points_marketplace",
+      (fields = { _id: 0,halykMarketName:1,cityId:1  }),
+      (filter = {}),
+      (page = "all")
+    );
     let updateData = [];
     let createData = [];
     let updatedCount = 0;
@@ -65,6 +75,22 @@ async function updateDataFromXML() {
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = element.sku;
+      if (element.stocks.stock) {
+        let templocations = element.stocks.stock;
+        //check if type is object?
+        if (!Array.isArray(templocations)) {
+          element.locations = [templocations];
+        } else {
+          element.locations = templocations;
+        }
+        delete element.stocks;
+        let matchedData = element.locations.map(item => {
+          let match = allPickupPoints.result.find(innerItem => innerItem.halykMarketName === item.storeId);
+          delete match?.halykMarketName;
+          return match ? { ...item, ...match } : item;
+        }).filter(item => item.storeId !== undefined);
+        element.locations = matchedData
+      }
       if (allDBidsMapped.includes(element._id)) {
         element.updated = timeUpdate;
         updateData.push(element);

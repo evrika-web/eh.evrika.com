@@ -8,7 +8,7 @@ app.options('*', cors())
 
 const moment = require("moment");
 const promotionsRouter = require("./router/promotionsRouter");
-const catalogMainRouter = require("./router/catalogMainRouter");
+const mainRouter = require("./router/mainRouter");
 const catalogRouter = require("./router/catalogRouter");
 const halykMarketRouter = require("./router/halykMarketRouter");
 const port = process.env.PORT;
@@ -98,7 +98,7 @@ app.get("/max-bonus/:article", async (req, res) => {
 });
 
 //Подключение запросов для каталога
-app.use(catalogMainRouter);
+app.use(mainRouter);
 app.use(catalogRouter);
 
 //Подключение запросов по halyk market

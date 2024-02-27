@@ -9,6 +9,7 @@ const {
   updateCities,
   updateBranches,
 } = require("../api/catalog/catalogApi");
+const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,
@@ -17,7 +18,7 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //Обновление данных по товарам
-schedule.scheduleJob({ hour: 2 }, async () => {
+schedule.scheduleJob('*/30 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data");
   let catalogUpdate = await updateData();
@@ -83,5 +84,22 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   }
   else {
     log.error("Daily update branches data error: ", catalogUpdate.error);
+  }
+});
+
+//Обновление данных по товарам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data halyk");
+  let catalogUpdate = await updateDataFromXML();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Daily update products halyk log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update products halyk data error: ", catalogUpdate.error);
   }
 });

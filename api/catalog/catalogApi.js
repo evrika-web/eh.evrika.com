@@ -23,7 +23,7 @@ async function updateData() {
   try {
     let externalURL =
       process.env.XML_DATA_URL ||
-      "https://site.evrika.com/facebook/data-all-new.xml";
+      "https://back.evrika.com/facebook/data-all-new.xml";
     let XMLdata;
     let jObj = {};
     await axios(
@@ -319,12 +319,12 @@ async function updateBranches() {
         for (var i in data) {
           var item = data[i];
           item._id = item.id;
-          // If the cities is not on DB yet, we add it to DB
+          // If the branches is not on DB yet, we add it to DB
           if (!allDBidsMapped.includes(item.id)) {
             await insertOneData("branches", item);
             createdCount += 1;
           } else {
-            // If the cities is already on DB but has changed its name or parent, we update it
+            // If the branches is already on DB but has changed its name or parent, we update it
             await replaceOne("branches", item, { _id: item._id });
             updatedCount += 1;
           }
