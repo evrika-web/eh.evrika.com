@@ -36,9 +36,11 @@ router.get("/update-products", async (req, res) => {
 
 router.get("/check-product/:productArticle/:cityId", async (req, res) => {
   const { productArticle, cityId } = req.params;
+  console.log("🚀 ~ router.get ~ productArticle, cityId:", productArticle, cityId)
   var conditions = {
-    $and: [{ _id: productArticle }, { ["locations.cityId"]: parseInt(cityId) }],
+    $and: [{ _id: productArticle }, { ["locations.availability"]: cityId }],
   };
+  console.log("🚀 ~ router.get ~ conditions:", conditions)
   try {
     var data = await getOneFromCollectionByFilter(
       "halyk_market",
