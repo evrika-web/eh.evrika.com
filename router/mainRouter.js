@@ -35,6 +35,9 @@ const router=[
   getMongoApiRouter('/pickup-point-marketplace', '/pickup-point-marketplaces', 'pickup_points_marketplace', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
+  getMongoApiRouter('/promo_form_cfo', '/promo_forms_cfo', 'promo_form_cfo', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  }),
 ]
 
 module.exports = router;
