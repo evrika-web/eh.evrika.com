@@ -36,12 +36,12 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
 
-const { useTreblle } = require('treblle')
+// const { useTreblle } = require('treblle')
 
-useTreblle(app, {
-  apiKey: 'zCaKkCqQbAYOsj7in1jSMT8Z05zKq1Bb',
-  projectId: 'j0hX8iV7TRyWBEuy',
-})
+// useTreblle(app, {
+//   apiKey: 'zCaKkCqQbAYOsj7in1jSMT8Z05zKq1Bb',
+//   projectId: 'j0hX8iV7TRyWBEuy',
+// })
 
 //Проверка работает ли сервер
 app.get("/ping", (req, res) => {
