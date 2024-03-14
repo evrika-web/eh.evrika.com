@@ -33,17 +33,15 @@ opts = {
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
-
-const treblle = require('@treblle/express')
-
-app.use(treblle({
-  apiKey: process.env.TREBLLE_API_KEY,
-  projectId: process.env.TREBLLE_PROJECT_ID,
-  additionalFieldsToMask: [],
-}))
-
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
+
+const { useTreblle } = require('treblle')
+
+useTreblle(app, {
+  apiKey: 'zCaKkCqQbAYOsj7in1jSMT8Z05zKq1Bb',
+  projectId: 'Jymz0PltQZc2Om51',
+})
 
 //Проверка работает ли сервер
 app.get("/ping", (req, res) => {
