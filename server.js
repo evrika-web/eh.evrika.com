@@ -40,7 +40,7 @@ const { useTreblle } = require('treblle')
 
 useTreblle(app, {
   apiKey: 'zCaKkCqQbAYOsj7in1jSMT8Z05zKq1Bb',
-  projectId: 'Jymz0PltQZc2Om51',
+  projectId: 'j0hX8iV7TRyWBEuy',
 })
 
 //Проверка работает ли сервер
