@@ -138,6 +138,7 @@ async function updateData() {
             element.specs.splice(index, 1);
           } else {
             element.specs[index].specid = parseInt(element.specs[index].specid);
+            element.specs[index].specsort = parseInt(element.specs[index].specsort) || 0;
             element.specs[index].valuesort = parseInt(
               element.specs[index].valuesort
             );

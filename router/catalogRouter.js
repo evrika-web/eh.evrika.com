@@ -256,7 +256,7 @@ router.post("/catalog/filters", async (req, res) => {
         
 
         var filteredObj = {};
-        filteredObj.id = 0;
+        filteredObj.id = parseInt(foundValues[index].valueid) ||0;
         filteredObj.url = process.env.FRONT_URL || "https://evrika.com";
         filteredObj.name = foundValues[index].value;
         filteredObj.value = foundValues[index].valueslug;
@@ -323,7 +323,7 @@ router.post("/catalog/filters", async (req, res) => {
         type: "checkbox",
         spec_id: spec.specid,
         name: specslugData,
-        sort: 1,
+        sort: spec.specsort || 0,
         is_filter_group: false,
         title: spec.name,
         tooltip: null,
@@ -331,8 +331,11 @@ router.post("/catalog/filters", async (req, res) => {
         isTrueFale: false,
       });
     }
+    let filtersFinalSorted = filtersFinal.sort(
+      (a, b) => Number(a.sort) - Number(b.sort)
+    );
     searchLog("success");
-    res.status(200).json(filtersFinal);
+    res.status(200).json(filtersFinalSorted);
   } catch (err) {
     res.status(404).send({ error: err.toString() });
   }
