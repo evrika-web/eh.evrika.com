@@ -8,6 +8,7 @@ const {
   insertOneData,
   getOneFromCollectionByFilter,
 } = require("../database/mongoDb/mongoQuerie");
+const { maskPhoneNumber } = require("../utility/maskData");
 
 function getMongoApiRouter(
   singleRoute,
@@ -32,7 +33,16 @@ function getMongoApiRouter(
         limit= parseInt(query.limit) || 24
       );
       if(result){
-        res.json(result);
+        if((multipleRoute === "/promo_forms_galmart" || multipleRoute === "/promo_forms_cfo") && result.result.length!==0)
+        {
+          maskedResult = result.result.map(e=>({
+            ...e,
+            phone: maskPhoneNumber(e.phone)
+          }))          
+          res.json({result: maskedResult, count: result.count});
+        }else{
+          res.json(result);
+        }
       }
       else{
         res.status(404).send({ error: 'Not found' });
