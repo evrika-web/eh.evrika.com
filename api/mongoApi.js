@@ -9,6 +9,7 @@ const {
   getOneFromCollectionByFilter,
 } = require("../database/mongoDb/mongoQuerie");
 const { maskPhoneNumber } = require("../utility/maskData");
+const { authenticateToken } = require("../utility/authorization");
 
 function getMongoApiRouter(
   singleRoute,
@@ -53,21 +54,27 @@ function getMongoApiRouter(
     }
   });
 
-  router.delete(singleRoute + "/:id", async (req, res) => {
-    let { id } = req.params;
-    if(collectionName==='products'){
-        id=parseInt(id)
-    }else{
-        id=getObjectId(id)
+
+router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
+  let { id } = req.params;
+  // Determine the type of id based on the collection
+  if (collectionName === 'products') {
+    id = parseInt(id);
+  } else {
+    id = getObjectId(id);
+  }
+
+  try {
+    const result = await deleteOne(collectionName, { _id: id });
+    if (result === 0) {
+      return res.status(404).send({ error: 'No item found with the given ID' });
     }
-    try {
-      const result = await deleteOne(collectionName, { _id: id });
-      res.json({ deletedCount: result });
-    } catch (err) {
-      console.log(err);
-      res.status(500).send({ error: err.toString() });
-    }
-  });
+    res.json({ deletedCount: result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
 
   router.put(singleRoute + "/:id", async (req, res) => {
     let { id } = req.params;
