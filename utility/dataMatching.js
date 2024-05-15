@@ -33,14 +33,13 @@ function catalogMatching(dirtyData, type = "products") {
     if (Object.keys(cleanData.price).length === 0) {
       delete cleanData.price;
     } else {
-      cleanData.$and.push(cleanData.price);
+      cleanData.$and.push({ price: cleanData.price });
       delete cleanData.price;
     }
   }
 
   //other filters matching
-  if(type!=="product-day")
-  {
+  if (type !== "product-day") {
     cleanData.$and.push({ categoryId: parseInt(dirtyData.category_id) || 234 });
   }
   cleanData.$and.push({ available: true });
