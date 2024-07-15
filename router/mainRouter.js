@@ -41,6 +41,12 @@ const router=[
   getMongoApiRouter('/promo_form_galmart', '/promo_forms_galmart', 'promo_form_galmart', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
+  getMongoApiRouter('/promo_form', '/promo_forms', 'promo_form', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  }),
+  getMongoApiRouter('/promocode', '/promocodes', 'promocodes', [], {
+    singleDataFilter: (param) => ({ _id: param.toString() }),
+  }),
 ]
 
 module.exports = router;

@@ -28,25 +28,27 @@ function getMongoApiRouter(
       const result = await getAllFromCollection(
         collectionName,
         getHiddenFieldsObject(hiddenCollectionFields),
-        filter = query.filter,
+        (filter = query.filter),
         page,
-        sort=query.sort || "", 
-        limit= parseInt(query.limit) || 24
+        (sort = query.sort || ""),
+        (limit = parseInt(query.limit) || 24)
       );
-      if(result){
-        if((multipleRoute === "/promo_forms_galmart" || multipleRoute === "/promo_forms_cfo") && result.result.length!==0)
-        {
-          maskedResult = result.result.map(e=>({
+      if (result) {
+        if (
+          (multipleRoute === "/promo_forms_galmart" ||
+            multipleRoute === "/promo_forms_cfo") &&
+          result.result.length !== 0
+        ) {
+          maskedResult = result.result.map((e) => ({
             ...e,
-            phone: maskPhoneNumber(e.phone)
-          }))          
-          res.json({result: maskedResult, count: result.count});
-        }else{
+            phone: maskPhoneNumber(e.phone),
+          }));
+          res.json({ result: maskedResult, count: result.count });
+        } else {
           res.json(result);
         }
-      }
-      else{
-        res.status(404).send({ error: 'Not found' });
+      } else {
+        res.status(404).send({ error: "Not found" });
       }
     } catch (err) {
       console.log(err);
@@ -54,34 +56,35 @@ function getMongoApiRouter(
     }
   });
 
-
-router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
-  let { id } = req.params;
-  // Determine the type of id based on the collection
-  if (collectionName === 'products') {
-    id = parseInt(id);
-  } else {
-    id = getObjectId(id);
-  }
-
-  try {
-    const result = await deleteOne(collectionName, { _id: id });
-    if (result === 0) {
-      return res.status(404).send({ error: 'No item found with the given ID' });
+  router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
+    let { id } = req.params;
+    // Determine the type of id based on the collection
+    if (collectionName === "products") {
+      id = parseInt(id);
+    } else {
+      id = getObjectId(id);
     }
-    res.json({ deletedCount: result });
-  } catch (err) {
-    console.log(err);
-    res.status(500).send({ error: err.toString() });
-  }
-});
+
+    try {
+      const result = await deleteOne(collectionName, { _id: id });
+      if (result === 0) {
+        return res
+          .status(404)
+          .send({ error: "No item found with the given ID" });
+      }
+      res.json({ deletedCount: result });
+    } catch (err) {
+      console.log(err);
+      res.status(500).send({ error: err.toString() });
+    }
+  });
 
   router.put(singleRoute + "/:id", async (req, res) => {
     let { id } = req.params;
-    if(collectionName==='products'){
-        id=parseInt(id)
-    }else{
-        id=getObjectId(id)
+    if (collectionName === "products") {
+      id = parseInt(id);
+    } else {
+      id = getObjectId(id);
     }
     try {
       const result = await updateOne(
@@ -102,7 +105,7 @@ router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
       if (postBodyModifier) {
         insertedData = postBodyModifier(insertedData);
       }
-      if (collectionName==='products' && insertedData.id) {
+      if (collectionName === "products" && insertedData.id) {
         insertedData._id = insertedData.id;
       }
       const result = await insertOneData(collectionName, insertedData);
@@ -126,10 +129,12 @@ router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
           additionalData: await additionalDataQuery(),
         };
       }
-      if(data){
-        res.json({ result: data });
-      }
-      else{
+      if (data) {
+        if (collectionName === "promocodes") res.json(data);
+        else {
+          res.json({ result: data });
+        }
+      } else {
         res.status(404).send({ error: "Not found" });
       }
     } catch (err) {
