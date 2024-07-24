@@ -22,6 +22,8 @@ const {
   updateCities,
   updateBranches,
 } = require("../api/catalog/catalogApi");
+const { getProducts, getProductById, createProduct, updateProduct, deleteProduct } = require("../controllers/productController");
+const { getAvailableFilters } = require("../controllers/filterController");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-search.log`,
@@ -114,31 +116,34 @@ router.post("/catalog/products", async (req, res) => {
 });
 
 router.post("/catalog/filters", async (req, res) => {
-  var body = req.body;
-  var filtersData = req.body.filters;
-  var categoryData = req.body.category_id;
-  var conditions = catalogMatching(body, "filters");
-  var conditionsForPrice = catalogMatching(body, "prices");
+  const body = req.body;
+  const filtersData = req.body.filters || {};
+  const categoryData = req.body.category_id;
+  const conditions = catalogMatching(body, "filters");
+  const conditionsForPrice = catalogMatching(body, "prices");
+
   try {
     let filtersFinal = [];
 
-    //get price filter
-    let aggregateArr = [];
-    aggregateArr.push({ $match: conditionsForPrice });
-    aggregateArr.push({
-      $group: {
-        _id: null,
-        maxPrice: { $max: "$price" },
-        minPrice: { $min: "$price" },
+    // Get price filter
+    let aggregateArr = [
+      { $match: conditionsForPrice },
+      {
+        $group: {
+          _id: null,
+          maxPrice: { $max: "$price" },
+          minPrice: { $min: "$price" },
+        },
       },
-    });
-    var prices = await aggregateCollection("products", aggregateArr);
+    ];
+
+    let prices = await aggregateCollection("products", aggregateArr);
     if (!Array.isArray(prices) || prices.length === 0) {
       prices = await aggregateCollection("products", [
         {
           $match: {
             $and: [
-              { available: "true" },
+              { available: true },
               { categoryId: parseInt(categoryData) },
             ],
           },
@@ -153,20 +158,13 @@ router.post("/catalog/filters", async (req, res) => {
       ]);
     }
 
-    let costFrom = null;
-    let costTo = null;
-    if (
-      Object.keys(filtersData).length != 0 &&
-      Array.isArray(filtersData.cost_from)
-    ) {
-      costFrom = filtersData.cost_from[0];
+    if (!Array.isArray(prices) || prices.length === 0) {
+      throw new Error("No prices found");
     }
-    if (
-      Object.keys(filtersData).length != 0 &&
-      Array.isArray(filtersData.cost_to)
-    ) {
-      costTo = filtersData.cost_to[0];
-    }
+
+    const costFrom = filtersData.cost_from ? parseInt(filtersData.cost_from[0]) : prices[0].minPrice;
+    const costTo = filtersData.cost_to ? parseInt(filtersData.cost_to[0]) : prices[0].maxPrice;
+
     filtersFinal.push({
       range: {
         min_value: prices[0].minPrice,
@@ -177,13 +175,13 @@ router.post("/catalog/filters", async (req, res) => {
       from: {
         name: "cost_from",
         min: prices[0].minPrice || 0,
-        value: costFrom ? parseInt(costFrom) : prices[0].minPrice || 0,
+        value: costFrom,
         placeholder: "от",
       },
       to: {
         name: "cost_to",
         max: prices[0].maxPrice || 0,
-        value: costTo ? parseInt(costTo) : prices[0].maxPrice || 0,
+        value: costTo,
         placeholder: "до",
       },
       title: "Цена",
@@ -191,31 +189,18 @@ router.post("/catalog/filters", async (req, res) => {
       isTrueFale: false,
     });
 
-    //get brands filter
-    var allBrands = await getDistinct(
-      "products",
-      (fieldname = "vendor"),
-      (filters = { categoryId: parseInt(categoryData) || 234 })
-    );
+    // Get brands filter
+    const allBrands = await getDistinct("products", "vendor", { categoryId: parseInt(categoryData) || 234 });
+
     if (allBrands) {
-      let options = [];
-      for (let i in allBrands) {
-        let tempobj = {
-          name: allBrands[i],
-          value: allBrands[i],
-          selected: false,
-          disabled: false,
-          url: "https://rnd2.evrika.com",
-        };
-        if (
-          Object.keys(filtersData).length != 0 &&
-          Array.isArray(filtersData.brand) &&
-          filtersData.brand.find((value) => value == allBrands[i]) != undefined
-        ) {
-          tempobj.selected = true;
-        }
-        options.push(tempobj);
-      }
+      const options = allBrands.map((brand) => ({
+        name: brand,
+        value: brand,
+        selected: filtersData.brand && Array.isArray(filtersData.brand) && filtersData.brand.includes(brand),
+        disabled: false,
+        url: "https://rnd2.evrika.com",
+      }));
+
       filtersFinal.push({
         type: "checkbox",
         name: "brand",
@@ -226,98 +211,40 @@ router.post("/catalog/filters", async (req, res) => {
       });
     }
 
-    //get others filter
-    var availableFilters = await getDistinct(
-      "products",
-      (fieldname = "specs"),
-      (filters = conditions)
-    );
+    // Get other filters
+    const availableFilters = await getDistinct("products", "specs", conditions);
+    const allFilters = await getDistinct("products", "specs", { categoryId: parseInt(categoryData) || 234 });
 
-    var allFilters = await getDistinct(
-      "products",
-      (fieldname = "specs"),
-      (filters = { categoryId: parseInt(categoryData) || 234 })
-    );
     const specsObj = [
-      ...new Map(
-        availableFilters.map((item) => [item["specslug"], item])
-      ).values(),
+      ...new Map(availableFilters.map((item) => [item.specslug, item])).values(),
     ];
-    for (let spec of specsObj) {
-      
-      if(spec.name==='badge_0' ||  spec.name === 'badge_1' || spec.name === 'badge_2' || spec.name === 'badge_3' || spec.name === 'badge_4'){continue;}
 
-      let options = [];
-      let specslugData = spec.specslug;
-      const foundValues = allFilters.filter(
-        ({ specslug }) => specslug === specslugData
-      );
-      for (let index in foundValues) {
-        
-
-        var filteredObj = {};
-        filteredObj.id = parseInt(foundValues[index].valueid) ||0;
-        filteredObj.url = process.env.FRONT_URL || "https://evrika.com";
-        filteredObj.name = foundValues[index].value;
-        filteredObj.value = foundValues[index].valueslug;
-        filteredObj.sort = foundValues[index].valuesort;
-
-        if (
-          options.find(
-            ({ value }) => value == filteredObj.value
-          ) != undefined
-        ){
-          continue;
-        }
-
-        if (
-          availableFilters.find(
-            ({ valueslug }) => valueslug == foundValues[index].valueslug
-          ) != undefined
-        ) {
-          filteredObj.disabled = false;
-        } else {
-          filteredObj.disabled = true;
-        }
-        if (
-          Object.keys(filtersData).length != 0 &&
-          Array.isArray(filtersData[specslugData]) &&
-          filtersData[specslugData].find(
-            (valueslug) => valueslug == foundValues[index].valueslug
-          ) != undefined
-        ) {
-          filteredObj.selected = true;
-        } else {
-          filteredObj.selected = false;
-        }
-        options.push(filteredObj);
+    for (const spec of specsObj) {
+      if (["badge_0", "badge_1", "badge_2", "badge_3", "badge_4"].includes(spec.name)) {
+        continue;
       }
-      let disabledFilters = []
-      let selectedFilters = []
-      let otherfilters = []
-      options.map(e=>{
-        if(e.disabled){
-          disabledFilters.push(e)
-        } else if(!e.disabled &&  e.selected){
-          selectedFilters.push(e)
-        }else{
-          otherfilters.push(e)
+
+      const options = [];
+      const specslugData = spec.specslug;
+      const foundValues = allFilters.filter(({ specslug }) => specslug === specslugData);
+
+      for (const value of foundValues) {
+        const filteredObj = {
+          id: parseInt(value.valueid) || 0,
+          url: process.env.FRONT_URL || "https://evrika.com",
+          name: value.value,
+          value: value.valueslug,
+          sort: value.valuesort,
+          disabled: !availableFilters.some(({ valueslug }) => valueslug === value.valueslug),
+          selected: filtersData[specslugData] && Array.isArray(filtersData[specslugData]) && filtersData[specslugData].includes(value.valueslug),
+        };
+
+        if (!options.some(({ value }) => value === filteredObj.value)) {
+          options.push(filteredObj);
         }
-      })
-      
-      let optionsSorted = []
-      let selectedFiltersSorted = selectedFilters.sort(
-        (a, b) => Number(a.sort) - Number(b.sort)
-      );
-      optionsSorted = [...optionsSorted, ...selectedFiltersSorted]
-      let otherfiltersSorted = otherfilters.sort(
-        (a, b) => Number(a.sort) - Number(b.sort)
-      );
-      optionsSorted = [...optionsSorted, ...otherfiltersSorted]
-      let disabledFiltersSorted = disabledFilters.sort(
-        (a, b) => Number(a.sort) - Number(b.sort)
-      );
-      optionsSorted = [...optionsSorted, ...disabledFiltersSorted]
+      }
+
+      const sortedOptions = [...options].sort((a, b) => a.sort - b.sort);
 
       filtersFinal.push({
         type: "checkbox",
@@ -327,19 +254,19 @@ router.post("/catalog/filters", async (req, res) => {
         is_filter_group: false,
         title: spec.name,
         tooltip: null,
-        options: optionsSorted,
+        options: sortedOptions,
         isTrueFale: false,
       });
     }
-    let filtersFinalSorted = filtersFinal.sort(
-      (a, b) => Number(a.sort) - Number(b.sort)
-    );
+
+    filtersFinal.sort((a, b) => a.sort - b.sort);
     searchLog("success");
-    res.status(200).json(filtersFinalSorted);
+    res.status(200).json(filtersFinal);
   } catch (err) {
-    res.status(404).send({ error: err.toString() });
+    res.status(500).send({ error: err.toString() });
   }
 });
+
 
 router.get("/update-products", async (req, res) => {
   try {
@@ -446,4 +373,9 @@ router.get("/update-stocks", async (req, res) => {
   }
 });
 
+
+// //V2 catalog
+// router.route('/v2/catalog/products').get(getProducts).post(createProduct);
+// router.route('/v2/catalog/products/:id').get(getProductById).put(updateProduct).delete(deleteProduct);
+// router.route('/v2/catalog/filters').get(getAvailableFilters);
 module.exports = router;
