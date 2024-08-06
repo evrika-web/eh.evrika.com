@@ -3,43 +3,57 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Category = require('../models/Category'); // Подключаем модель категорий
 
+
 // Маршрут для получения фильтров
 router.post('/v2/catalog/filters', async (req, res) => {
     const { category_id, city_id, filters = {} } = req.body;
     const filterBrands = filters.brand || [];
-    const costFrom = filters['cost-from'] || 0;
-    const costTo = filters['cost-to'] || Number.MAX_SAFE_INTEGER;
+    const costFromArray = filters['cost-from'] || [];
+    const costToArray = filters['cost-to'] || [];
+
+    // Проверка наличия значений и преобразование в числа
+    const costFrom = costFromArray.length > 0 ? parseInt(costFromArray[0], 10) : null;
+    const costTo = costToArray.length > 0 ? parseInt(costToArray[0], 10) : null;
 
     try {
-        const query = {
+        // Подготовка основного запроса с учетом всех фильтров, кроме цены
+        const baseQuery = {
             categoryId: category_id,
-            price: { $gte: costFrom, $lte: costTo },
             locations: { $elemMatch: { id: city_id, stock_quantity: { $gt: 0 } } }
         };
 
-        if (filterBrands.length > 0) {
-            query.vendor = { $in: filterBrands };
-        }
-
         // Применяем фильтры характеристик
+        const specFilters = [];
         Object.keys(filters).forEach(filter => {
             if (filter !== 'brand' && filter !== 'cost-from' && filter !== 'cost-to') {
-                query[`specs`] = { 
+                specFilters.push({
                     $elemMatch: {
                         specslug: filter,
                         valueslug: { $in: filters[filter] }
                     }
-                };
+                });
             }
         });
 
-        console.log("🚀 ~ router.post ~ query:", query)
-        const products = await Product.find(query).lean();
+        if (specFilters.length > 0) {
+            baseQuery.specs = { $all: specFilters };
+        }
+
+        // Запрос для получения товаров без учета фильтра по цене для расчета priceRange
+        const productsWithoutPriceFilter = await Product.find(baseQuery).lean();
 
         const priceRange = {
-            min_value: Math.min(...products.map(p => p.price)),
-            max_value: Math.max(...products.map(p => p.price))
+            min_value: Math.min(...productsWithoutPriceFilter.map(p => p.price)),
+            max_value: Math.max(...productsWithoutPriceFilter.map(p => p.price))
         };
+
+        // Запрос для получения товаров с учетом всех фильтров, включая фильтр по цене
+        const query = {
+            ...baseQuery,
+            price: { $gte: costFrom || 0, $lte: costTo || Number.MAX_SAFE_INTEGER }
+        };
+
+        const products = await Product.find(query).lean();
 
         const availableSpecsFilter = {};
         const allSpecsFilter = {};
@@ -84,44 +98,71 @@ router.post('/v2/catalog/filters', async (req, res) => {
 
         const specsResponse = sortedSpecs.map(name => {
             const values = Array.from(allSpecsFilter[name].values());
-            const sortedValues = values.sort((a, b) => a.valuesort - b.valuesort);
+            const availableValues = values.filter(spec => availableSpecsFilter[name] && availableSpecsFilter[name].has(spec.value));
+            const unavailableValues = values.filter(spec => !availableSpecsFilter[name] || !availableSpecsFilter[name].has(spec.value));
+
+            availableValues.sort((a, b) => a.valuesort - b.valuesort);
+            unavailableValues.sort((a, b) => a.valuesort - b.valuesort);
 
             return {
                 type: 'checkbox',
-                spec_id: sortedValues[0].specid,
-                name: sortedValues[0].specslug,
-                sort: sortedValues[0].specsort,
+                spec_id: availableValues[0] ? availableValues[0].specid : unavailableValues[0].specid,
+                name: availableValues[0] ? availableValues[0].specslug : unavailableValues[0].specslug,
+                sort: availableValues[0] ? availableValues[0].specsort : unavailableValues[0].specsort,
                 is_filter_group: false,
-                title: sortedValues[0].name,
+                title: availableValues[0] ? availableValues[0].name : unavailableValues[0].name,
                 tooltip: null,
-                options: sortedValues.map(spec => {
-                    const isDisabled = !availableSpecsFilter[name] || !availableSpecsFilter[name].has(spec.value);
-                    return {
+                options: [
+                    ...availableValues.map(spec => ({
                         id: spec.valueid,
                         url: "https://evrika.com",
                         name: spec.value,
                         value: spec.valueslug,
                         sort: spec.valuesort,
-                        disabled: isDisabled,
-                        selected: filters[sortedValues[0].specslug]?.includes(spec.valueslug) || false,
-                        count: isDisabled ? 0 : specCounts[name][spec.value] || 0
-                    };
-                }),
+                        disabled: false,
+                        selected: filters[spec.specslug]?.includes(spec.valueslug) || false,
+                        count: specCounts[name][spec.value] || 0
+                    })),
+                    ...unavailableValues.map(spec => ({
+                        id: spec.valueid,
+                        url: "https://evrika.com",
+                        name: spec.value,
+                        value: spec.valueslug,
+                        sort: spec.valuesort,
+                        disabled: true,
+                        selected: filters[spec.specslug]?.includes(spec.valueslug) || false,
+                        count: 0
+                    }))
+                ],
                 isTrueFale: false
             };
         });
 
-        const availableBrands = new Set(products.map(product => product.vendor));
-        const allBrands = new Set(allProducts.map(product => product.vendor));
+        // Получение всех брендов и определение их доступности
+        const allBrands = await Product.distinct('vendor', { categoryId: category_id });
+        const availableBrandsSet = new Set(products.map(product => product.vendor));
 
-        const brandOptions = Array.from(allBrands).sort().map(brand => ({
-            name: brand,
-            value: brand,
-            selected: filterBrands.includes(brand),
-            disabled: !availableBrands.has(brand),
-            url: "https://rnd2.evrika.com",
-            count: availableBrands.has(brand) ? products.filter(p => p.vendor === brand).length : 0
-        }));
+        const availableBrands = allBrands.filter(brand => availableBrandsSet.has(brand)).sort();
+        const unavailableBrands = allBrands.filter(brand => !availableBrandsSet.has(brand)).sort();
+
+        const brandOptions = [
+            ...availableBrands.map(brand => ({
+                name: brand,
+                value: brand,
+                selected: filterBrands.includes(brand),
+                disabled: false,
+                url: "https://rnd2.evrika.com",
+                count: products.filter(p => p.vendor === brand).length
+            })),
+            ...unavailableBrands.map(brand => ({
+                name: brand,
+                value: brand,
+                selected: filterBrands.includes(brand),
+                disabled: true,
+                url: "https://rnd2.evrika.com",
+                count: 0
+            }))
+        ];
 
         const response = [
             {
@@ -131,13 +172,13 @@ router.post('/v2/catalog/filters', async (req, res) => {
                 from: {
                     name: "cost_from",
                     min: priceRange.min_value,
-                    value: costFrom,
+                    value: costFrom !== null ? String(costFrom) : null,
                     placeholder: "от"
                 },
                 to: {
                     name: "cost_to",
                     max: priceRange.max_value,
-                    value: costTo,
+                    value: costTo !== null ? String(costTo) : null,
                     placeholder: "до"
                 },
                 title: "Цена",
@@ -166,14 +207,14 @@ router.post('/v2/catalog/filters', async (req, res) => {
 router.post('/v2/catalog/products', async (req, res) => {
     const { category_id, city_id, filters = {}, sort = "popular", page = 1 } = req.body;
     const filterBrands = filters.brand || [];
-    const costFrom = filters['cost-from'] || 0;
-    const costTo = filters['cost-to'] || Number.MAX_SAFE_INTEGER;
+    const costFrom = filters['cost-from'] || [0];
+    const costTo = filters['cost-to'] || [Number.MAX_SAFE_INTEGER];
     const perPage = 23; // количество товаров на странице
 
     try {
         const query = {
             categoryId: category_id,
-            price: { $gte: costFrom, $lte: costTo }
+            price: { $gte: costFrom[0], $lte: costTo[0] }
         };
 
         if (filterBrands.length > 0) {
@@ -181,16 +222,22 @@ router.post('/v2/catalog/products', async (req, res) => {
         }
 
         // Применяем фильтры характеристик
+        const specFilters = [];
         Object.keys(filters).forEach(filter => {
             if (filter !== 'brand' && filter !== 'cost-from' && filter !== 'cost-to') {
-                query[`specs`] = { 
+                specFilters.push({
                     $elemMatch: {
                         specslug: filter,
                         valueslug: { $in: filters[filter] }
                     }
-                };
+                });
             }
         });
+
+        if (specFilters.length > 0) {
+            query.specs = { $all: specFilters };
+        }
+        console.log("🚀 ~ router.post product ~ query:", query)
 
         let sortOption = {};
         switch (sort) {
