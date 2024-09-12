@@ -88,7 +88,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   }
 });
 
-//Обновление данных по товарам
+//Обновление данных по товарам halyk
 schedule.scheduleJob({ hour: 1 }, async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data halyk");
@@ -105,7 +105,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   }
 });
 
-//Обновление данных по товарам
+//Обновление данных по товарам kaspi
 schedule.scheduleJob({ hour: 1 }, async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data kaspi");
