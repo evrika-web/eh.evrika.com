@@ -5,28 +5,28 @@ require("dotenv").config();
 const SimpleNodeLogger = require("simple-node-logger");
 const { getOneFromCollectionByFilter } = require("../database/mongoDb/mongoQuerie");
 const {} = require("../api/catalog/catalogApi");
-const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
+const { updateDataFromXMLKaspi } = require("../api/kaspiMarket/kaspiMarketApi");
 
 opts = {
-  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-halyk-market.log`,
+  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-kaspi-market.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 router.get("/update-products", async (req, res) => {
   try {
-    let halykMarketUpdate = await updateDataFromXML();
-    if (halykMarketUpdate.status === 200) {
+    let kaspiUpdate = await updateDataFromXMLKaspi();
+    if (kaspiUpdate.status === 200) {
       log.info("Update products log ", {
-        created: halykMarketUpdate.created,
-        updated: halykMarketUpdate.updated,
+        created: kaspiUpdate.created,
+        updated: kaspiUpdate.updated,
       });
       res.status(200).json({
-        created: halykMarketUpdate.created,
-        updated: halykMarketUpdate.updated,
+        created: kaspiUpdate.created,
+        updated: kaspiUpdate.updated,
       });
     } else {
-      throw new Error("Update products data error: ", halykMarketUpdate);
+      throw new Error("Update products data error: ", kaspiUpdate);
     }
   } catch (err) {
     console.log(err);
@@ -37,11 +37,11 @@ router.get("/update-products", async (req, res) => {
 router.get("/check-product/:productArticle/:cityId", async (req, res) => {
   const { productArticle, cityId } = req.params;
   var conditions = {
-    $and: [{ _id: productArticle }, { ["locations.cityId"]: parseInt(cityId) }],
+    $and: [{ _id: productArticle }, { ["locations.city_id"]: parseInt(cityId) }],
   };
   try {
     var data = await getOneFromCollectionByFilter(
-      "halyk_market",
+      "kaspi_market",
       (filter = conditions)
     );
     if (data) {

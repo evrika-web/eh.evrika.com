@@ -47,6 +47,9 @@ const router=[
   getMongoApiRouter('/promocode', '/promocodes', 'promocodes', [], {
     singleDataFilter: (param) => ({ _id: param.toString() }),
   }),
+  getMongoApiRouter('/kaspi-market-product', '/kaspi-market-products', 'kaspi_market', [], {
+    singleDataFilter: (param) => ({ _id: param.toString() }),
+  }),
 ]
 
 module.exports = router;
