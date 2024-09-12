@@ -10,6 +10,7 @@ const {
   updateBranches,
 } = require("../api/catalog/catalogApi");
 const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
+const { updateDataFromXMLKaspi } = require("../api/kaspiMarket/kaspiMarketApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,
@@ -101,5 +102,22 @@ schedule.scheduleJob({ hour: 1 }, async () => {
     });
   } else {
     log.error("Daily update products halyk data error: ", catalogUpdate.error);
+  }
+});
+
+//Обновление данных по товарам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update data kaspi");
+  let catalogUpdate = await updateDataFromXMLKaspi();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Daily update products kaspi log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update products kaspi data error: ", catalogUpdate.error);
   }
 });
