@@ -4,7 +4,7 @@ const app = express();
 
 //CORS policy
 app.use(cors());
-app.options('*', cors())
+app.options("*", cors());
 
 const moment = require("moment");
 const promotionsRouter = require("./router/promotionsRouter");
@@ -12,6 +12,8 @@ const mainRouter = require("./router/mainRouter");
 const catalogRouter = require("./router/catalogRouter");
 const halykMarketRouter = require("./router/halykMarketRouter");
 const kaspiMarketRouter = require("./router/kaspiMarketRouter");
+const catalogV4Router = require("./router/catalog-v4Router");
+const elasticRouter = require("./router/elasticRouter");
 const port = process.env.PORT;
 const host = process.env.HOST;
 const dbName = process.env.MONGO_DB_NAME || "search-system";
@@ -26,15 +28,17 @@ const mongoLog = getAppLog("MongoDB");
 
 //Добавление логирования ошибок и запросов
 const SimpleNodeLogger = require("simple-node-logger");
-const {
-  connectDb
-} = require("./database/mongoDb/mongoQuerie");
+const { connectDb } = require("./database/mongoDb/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-main.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
+
+const createIndex = require("./database/elastic/elasticSetup");
+const { watchChanges } = require("./database/elastic/elasticSync");
+
 //ограничение в файлах json до 50МБ
 app.use(express.json({ limit: "50mb" }));
 
@@ -121,8 +125,7 @@ app.get("/max-bonus-test/:article", async (req, res) => {
           maxBonusPercent = 1.5;
         } else if (articleID === "98400015708") {
           maxBonusPercent = true;
-        }
-         else if (result[0].nal !== null) {
+        } else if (result[0].nal !== null) {
           maxBonusPercent = result[0].nal;
         } else if (articleID === "OF000009597") {
           maxBonusPercent = 5;
@@ -148,19 +151,19 @@ app.get("/max-bonus-test/:article", async (req, res) => {
       ],
     });
   }
-  if(articleID === '98400015864'){
+  if (articleID === "98400015864") {
     return res.json({
       success: true,
       status: 404,
-      err:'404 Not Found!'
+      err: "404 Not Found!",
     });
-  } else if(articleID === 'OF000009590'){
+  } else if (articleID === "OF000009590") {
     return res.json({
       success: true,
       status: 500,
-      err:'unpredictable error'
+      err: "unpredictable error",
     });
-  } else if(articleID === 'OF000009589'){
+  } else if (articleID === "OF000009589") {
     return res.json({
       success: true,
       status: 200,
@@ -173,7 +176,7 @@ app.get("/max-bonus-test/:article", async (req, res) => {
         ],
       },
     });
-    }
+  }
 
   return res.json({
     success: true,
@@ -199,11 +202,29 @@ app.use("/halyk", halykMarketRouter);
 //Подключение запросов по kaspi market
 app.use("/kaspi", kaspiMarketRouter);
 
+//Подключение запросов по kaspi market
+app.use("/catalog/v4", catalogV4Router);
+
+//Подключение запросов по kaspi market
+app.use("/elastic", elasticRouter);
+
+// Обработка несуществующих маршрутов
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Маршрут не найден" });
+});
+
+// Обработка ошибок
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Внутренняя ошибка сервера" });
+});
+
 //Определение порта и хоста для сервера
 app.listen(port, host, async () => {
   log.info(`Server running on port ${port} and host ${host}`);
   console.log(`Server running on port ${port} and host ${host}`);
   serverLog(`Server running on port ${port} and host ${host}`);
+  const connectDB = require("./config/db"); // Путь к вашему файлу db.js
   const dbConnected = await connectDb(url, dbName);
   if (dbConnected) {
     mongoLog("connected", url);
@@ -212,4 +233,17 @@ app.listen(port, host, async () => {
     serverLog("Mongo not running", url);
     mongoLog("not connected", url);
   }
+
+  // Подключение к базе данных
+  connectDB();
+
+  // Подключение к ElasticSearch и настройка индекса
+  createIndex()
+    .then(() => {
+      // Запуск отслеживания изменений после успешного создания индекса
+      watchChanges();
+    })
+    .catch((err) => {
+      console.error("Ошибка при создании индекса ElasticSearch:", err);
+    });
 });
