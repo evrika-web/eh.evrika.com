@@ -140,13 +140,15 @@ router.get("/search", async (req, res) => {
               {
                 multi_match: {
                   query: q,
-                  fields: ["name^3", "vendor.raw^4"],
-                  type: "most_fields",
+                  fields: ["name^3", "vendor^4", "description", "specs"],
+                  type: "best_fields",
                   fuzziness: "AUTO",
+                  prefix_length: 1,
+                  max_expansions: 50,
+                  operator: "OR",
+                  minimum_should_match: "50%",
                 },
               },
-            ],
-            should: [
               {
                 match_phrase: {
                   name: {
@@ -156,7 +158,6 @@ router.get("/search", async (req, res) => {
                 },
               },
             ],
-            filter: [],
           },
         },
         highlight: {
@@ -165,24 +166,13 @@ router.get("/search", async (req, res) => {
             description: {},
           },
         },
-        sort: [
-        ],
-        aggs: {
-          brands: {
-            terms: {
-              field: "vendor.raw",
-              size: 10,
-            },
-          },
-          categories: {
-            terms: {
-              field: "categoryId",
-              size: 10,
-            },
-          },
-        },
         from: (page - 1) * limit,
         size: limit,
+        sort: [
+          { popularity: { order: "desc" } },
+          { sales: { order: "desc" } },
+          { price: { order: "asc" } },
+        ],
       },
     });
     console.log("🚀 ~ router.get ~ result:", result);
@@ -196,8 +186,8 @@ router.get("/search", async (req, res) => {
     if (hits.length === 0) {
       res.status(404).json({ message: "Товар не найден" });
     } else {
-      const categories = result.aggregations.categories.buckets;
-      const brands = result.aggregations.brands.buckets;
+    //   const categories = result.aggregations.categories.buckets;
+    //   const brands = result.aggregations.brands.buckets;
 
       const total = result.hits.total.value;
 
@@ -205,9 +195,48 @@ router.get("/search", async (req, res) => {
         page,
         limit,
         total,
-        categories,
-        brands,
         products: hits,
+      });
+    }
+  } catch (err) {
+    console.error("Ошибка при поиске товаров:", err);
+    res.status(500).json({ message: "Внутренняя ошибка сервера" });
+  }
+});
+// GET /api/products/search
+router.get("/search2", async (req, res) => {
+  try {
+    let { q, page = 1, limit = 20 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (!q) {
+      return res.status(400).json({ message: "Не указан поисковый запрос" });
+    }
+
+    // Проверка на редирект (предполагается, что есть коллекция Redirect)
+    const Redirect = require("../models/Redirect");
+    const redirect = await Redirect.findOne({ keyword: q.toLowerCase() });
+    if (redirect) {
+      return res.redirect(redirect.url);
+    }
+
+    // Поиск с фаззи-поиском и синонимами
+    const result = await Product.find(
+      { $text: { $search: q } },
+      // {filter: {$all: 'model-iphone11'}}
+      { score: { $meta: "textScore" } }
+    ).sort(
+      { score: { $meta: "textScore" }, popularity: -1, sales: -1, price: 1 }
+    ).limit(limit);
+
+    if (result.length === 0) {
+      res.status(404).json({ message: "Товар не найден" });
+    } else {
+      res.json({
+        page,
+        limit,
+        products: result,
       });
     }
   } catch (err) {

@@ -42,8 +42,8 @@ function catalogMatching(dirtyData, type = "products") {
   if (type !== "product-day") {
     cleanData.$and.push({ categoryId: parseInt(dirtyData.category_id) || 234 });
   }
-  cleanData.$and.push({ available: true });
-  cleanData.$and.push({
+  cleanData.push({ available: true });
+  cleanData.push({
     ["locations.id"]: dirtyData.city_id.toString() || "1",
   });
 
