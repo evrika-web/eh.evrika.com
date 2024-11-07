@@ -10,6 +10,7 @@ const {
 } = require("../database/mongoDb/mongoQuerie");
 const { maskPhoneNumber } = require("../utility/maskData");
 const { authenticateToken } = require("../utility/authorization");
+const moment = require("moment");
 
 function getMongoApiRouter(
   singleRoute,
@@ -107,6 +108,9 @@ function getMongoApiRouter(
       }
       if (collectionName === "products" && insertedData.id) {
         insertedData._id = insertedData.id;
+      }
+      else if (collectionName === "marketplace-reasons") {
+        insertedData.created_at = moment().format('YYYY-MM-DD HH:mm:ss');
       }
       const result = await insertOneData(collectionName, insertedData);
       res.json({ result });
