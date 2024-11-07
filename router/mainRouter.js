@@ -50,6 +50,9 @@ const router=[
   getMongoApiRouter('/kaspi-market-product', '/kaspi-market-products', 'kaspi_market', [], {
     singleDataFilter: (param) => ({ _id: param.toString() }),
   }),
+  getMongoApiRouter('/marketplace-reason', '/marketplace-reasons', 'marketplace-reasons', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  }),
 ]
 
 module.exports = router;
