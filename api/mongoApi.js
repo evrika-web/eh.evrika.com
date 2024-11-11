@@ -51,10 +51,10 @@ function getMongoApiRouter(
     let { id } = req.params;
     const filter = singleDataFilter
         ? singleDataFilter(id)
-        : getObjectId(id);
+        : { _id: getObjectId(param) };
 
     try {
-      const result = await deleteOne(collectionName, { _id: filter });
+      const result = await deleteOne(collectionName, filter);
       if (result === 0) {
         return res
           .status(404)
@@ -71,12 +71,12 @@ function getMongoApiRouter(
     let { id } = req.params;
     const filter = singleDataFilter
         ? singleDataFilter(id)
-        : getObjectId(id);
+        : { _id: getObjectId(param) };
     try {
       const result = await updateOne(
         collectionName,
         { $set: req.body.update },
-        { _id: filter }
+        filter 
       );
       res.json({ updateCount: result });
     } catch (err) {
@@ -93,7 +93,7 @@ function getMongoApiRouter(
         let data = await getOneFromCollectionByFilter(collectionName, filter);
         if (data){
           data.reasons.push({reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')})
-          const result = await updateOne(
+          await updateOne(
             collectionName,
             { $set: data },
             { _id: insertedData.vendor_code}
@@ -103,7 +103,7 @@ function getMongoApiRouter(
           insertedData._id = insertedData.vendor_code
           insertedData.reasons=[{reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')}]
           delete insertedData.reason
-          const result = await insertOneData(collectionName, insertedData);
+          await insertOneData(collectionName, insertedData);
           res.json({ status: "success" });
         }
       } else{
@@ -124,7 +124,7 @@ function getMongoApiRouter(
     try {
       const filter = singleDataFilter
         ? singleDataFilter(param)
-        : { url: "/" + param };
+        : { _id: getObjectId(param) };
       let data = await getOneFromCollectionByFilter(collectionName, filter);
       if (additionalDataQuery) {
         data = {
