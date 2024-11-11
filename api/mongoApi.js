@@ -8,7 +8,6 @@ const {
   insertOneData,
   getOneFromCollectionByFilter,
 } = require("../database/mongoDb/mongoQuerie");
-const { maskPhoneNumber } = require("../utility/maskData");
 const { authenticateToken } = require("../utility/authorization");
 const moment = require("moment");
 
@@ -19,14 +18,14 @@ function getMongoApiRouter(
   hiddenCollectionFields = [],
   optionalParams = {}
 ) {
-  const { singleDataFilter, additionalDataQuery, postBodyModifier } =
+  const { singleDataFilter, additionalDataQuery, postBodyModifier, resultBodyModifier, singleResultBodyModifier } =
     optionalParams;
   const router = express.Router();
   router.get(multipleRoute + "/:page", async (req, res) => {
     const { page } = req.params;
     const query = req.query;
     try {
-      const result = await getAllFromCollection(
+      let result = await getAllFromCollection(
         collectionName,
         getHiddenFieldsObject(hiddenCollectionFields),
         (filter = query.filter),
@@ -35,19 +34,10 @@ function getMongoApiRouter(
         (limit = parseInt(query.limit) || 24)
       );
       if (result) {
-        if (
-          (multipleRoute === "/promo_forms_galmart" ||
-            multipleRoute === "/promo_forms_cfo") &&
-          result.result.length !== 0
-        ) {
-          maskedResult = result.result.map((e) => ({
-            ...e,
-            phone: maskPhoneNumber(e.phone),
-          }));
-          res.json({ result: maskedResult, count: result.count });
-        } else {
-          res.json(result);
+        if(resultBodyModifier && result.result.length !== 0){
+          result = resultBodyModifier(result);
         }
+        res.json(result);        
       } else {
         res.status(404).send({ error: "Not found" });
       }
@@ -59,15 +49,12 @@ function getMongoApiRouter(
 
   router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
     let { id } = req.params;
-    // Determine the type of id based on the collection
-    if (collectionName === "products") {
-      id = parseInt(id);
-    } else {
-      id = getObjectId(id);
-    }
+    const filter = singleDataFilter
+        ? singleDataFilter(id)
+        : getObjectId(id);
 
     try {
-      const result = await deleteOne(collectionName, { _id: id });
+      const result = await deleteOne(collectionName, { _id: filter });
       if (result === 0) {
         return res
           .status(404)
@@ -82,16 +69,14 @@ function getMongoApiRouter(
 
   router.put(singleRoute + "/:id", async (req, res) => {
     let { id } = req.params;
-    if (collectionName === "products") {
-      id = parseInt(id);
-    } else {
-      id = getObjectId(id);
-    }
+    const filter = singleDataFilter
+        ? singleDataFilter(id)
+        : getObjectId(id);
     try {
       const result = await updateOne(
         collectionName,
         { $set: req.body.update },
-        { _id: parseInt(id) }
+        { _id: filter }
       );
       res.json({ updateCount: result });
     } catch (err) {
@@ -103,17 +88,31 @@ function getMongoApiRouter(
   router.post(singleRoute, async (req, res) => {
     try {
       let insertedData = req.body;
-      if (postBodyModifier) {
-        insertedData = postBodyModifier(insertedData);
+      if(collectionName ==='marketplace-reasons'){
+        const filter = singleDataFilter(insertedData.vendor_code)
+        let data = await getOneFromCollectionByFilter(collectionName, filter);
+        if (data){
+          data.reasons.push({reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')})
+          const result = await updateOne(
+            collectionName,
+            { $set: data },
+            { _id: insertedData.vendor_code}
+          );
+          res.json({ status: "success" });
+        } else{
+          insertedData._id = insertedData.vendor_code
+          insertedData.reasons=[{reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')}]
+          delete insertedData.reason
+          const result = await insertOneData(collectionName, insertedData);
+          res.json({ status: "success" });
+        }
+      } else{
+        if (postBodyModifier) {
+          insertedData = postBodyModifier(insertedData);
+        }
+        const result = await insertOneData(collectionName, insertedData);
+        res.json({ result });
       }
-      if (collectionName === "products" && insertedData.id) {
-        insertedData._id = insertedData.id;
-      }
-      else if (collectionName === "marketplace-reasons") {
-        insertedData.created_at = moment().format('YYYY-MM-DD HH:mm:ss');
-      }
-      const result = await insertOneData(collectionName, insertedData);
-      res.json({ result });
     } catch (err) {
       console.log(err);
       res.status(500).send({ error: err.toString() });
@@ -134,10 +133,12 @@ function getMongoApiRouter(
         };
       }
       if (data) {
-        if (collectionName === "promocodes") res.json(data);
-        else {
-          res.json({ result: data });
+        if(singleResultBodyModifier){
+          data = singleResultBodyModifier(data);
+        } else {
+          data = { result: data }
         }
+        res.json(data);       
       } else {
         res.status(404).send({ error: "Not found" });
       }
