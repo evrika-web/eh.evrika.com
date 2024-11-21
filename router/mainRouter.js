@@ -54,6 +54,12 @@ const router=[
   getMongoApiRouter('/marketplace-reason', '/marketplace-reasons', 'marketplace-reasons', [], {
     singleDataFilter: (param) => ({ _id: param.toString() })
   }),
+  getMongoApiRouter('/brand', '/brands', 'brands', [], {
+    singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
+  }),
+  getMongoApiRouter('/gift', '/gifts', 'gifts', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  }),
 ]
 
 module.exports = router;

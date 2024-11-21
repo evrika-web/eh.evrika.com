@@ -68,80 +68,95 @@ async function updateData() {
     for (let i = 0; i < products.length; i++) {
       const element = products[i];
       element._id = parseInt(element.id);
-      element.available = Boolean(element.available);
+      element.is_active = Boolean(element.available) === true ? 1 : 0;
       let cuttedUrl = element.url.split("/catalog/")[1];
       element.slug = cuttedUrl.slice(0, cuttedUrl.indexOf("/p"));
       element.gifts = [];
       element.badges = [];
       if (element.param) {
-        element.specs = element.param;
-        for (let index = 0; index < element.specs.length; index++) {
-          delete element.specs[index].priority;
-          if (element.specs[index].name === "badge_0") {
-            let badge = element.specs[index].value.split("||");
+        element.filter_specifications = element.param;
+        for (
+          let index = 0;
+          index < element.filter_specifications.length;
+          index++
+        ) {
+          delete element.filter_specifications[index].priority;
+          if (element.filter_specifications[index].name === "badge_0") {
+            let badge = element.filter_specifications[index].value.split("||");
             element.badges.push({
               id: 0,
-              sort: 0,
-              published: true,
-              color: element.specs[index].color,
+              color: element.filter_specifications[index].color,
               name: badge[0],
+              description: null,
+              rich_description: null,
+              all_products: 0,
             });
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "badge_1") {
-            let badge = element.specs[index].value.split("||");
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "badge_1") {
+            let badge = element.filter_specifications[index].value.split("||");
             element.badges.push({
               id: 1,
-              sort: 1,
-              published: true,
-              color: element.specs[index].color,
+              color: element.filter_specifications[index].color,
               name: badge[0],
+              description: null,
+              rich_description: null,
+              all_products: 0,
             });
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "badge_2") {
-            let badge = element.specs[index].value.split("||");
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "badge_2") {
+            let badge = element.filter_specifications[index].value.split("||");
             element.badges.push({
               id: 2,
-              sort: 2,
-              published: true,
-              color: element.specs[index].color,
+              color: element.filter_specifications[index].color,
               name: badge[0],
+              description: null,
+              rich_description: null,
+              all_products: 0,
             });
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "badge_3") {
-            let badge = element.specs[index].value.split("||");
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "badge_3") {
+            let badge = element.filter_specifications[index].value.split("||");
             element.badges.push({
               id: 3,
-              sort: 3,
-              published: true,
-              color: element.specs[index].color,
+              color: element.filter_specifications[index].color,
               name: badge[0],
+              description: null,
+              rich_description: null,
+              all_products: 0,
             });
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "badge_4") {
-            let badge = element.specs[index].value.split("||");
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "badge_4") {
+            let badge = element.filter_specifications[index].value.split("||");
             element.badges.push({
               id: 4,
-              sort: 4,
-              published: true,
-              color: element.specs[index].color,
+              color: element.filter_specifications[index].color,
               name: badge[0],
+              description: null,
+              rich_description: null,
+              all_products: 0,
             });
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "gifts") {
-            element.gifts.push(element.specs[index]);
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "mpn") {
-            element.mpn = element.specs[index].value;
-            element.specs.splice(index, 1);
-          } else if (element.specs[index].name === "ean") {
-            element.ean = element.specs[index].value;
-            element.specs.splice(index, 1);
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "gifts") {
+            element.gifts.push(element.filter_specifications[index]);
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "mpn") {
+            element.mpn = element.filter_specifications[index].value;
+            element.filter_specifications.splice(index, 1);
+          } else if (element.filter_specifications[index].name === "ean") {
+            element.ean = element.filter_specifications[index].value;
+            element.filter_specifications.splice(index, 1);
           } else {
-            element.specs[index].specid = parseInt(element.specs[index].specid);
-            element.specs[index].specsort = parseInt(element.specs[index].specsort) || 0;
-            element.specs[index].valuesort = parseInt(
-              element.specs[index].valuesort
+            element.filter_specifications[index].id = parseInt(
+              element.filter_specifications[index].specid
             );
+            delete element.filter_specifications[index].specid
+
+            element.filter_specifications[index].sort =
+              parseInt(
+                element.filter_specifications[index].specsort
+              ) || 0;
+            delete element.filter_specifications[index].specsort
+            
           }
         }
         delete element.param;
@@ -192,13 +207,13 @@ async function updateData() {
 async function updateCategories() {
   try {
     let dataFetched;
-    dataFetched = await dataFetching("/categories/menutree", false);
+    dataFetched = await dataFetching("/categories?locale=ru", false);
     log.info(
       moment().format("HH:mm DD-MM-YYYY"),
       " Update categories ",
       dataFetched
     );
-    let data = dataFetched.data;
+    let data = dataFetched.data.categories;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const allDBids = await getAllFromCollection(
@@ -291,7 +306,7 @@ async function updateCities() {
     return { status: 500, error: err };
   }
 }
-async function updateBranches() { 
+async function updateBranches() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/branches", false);
@@ -349,3 +364,44 @@ module.exports = {
   updateCities,
   updateBranches,
 };
+
+
+
+// ToDo: Update ALL code here to transaction
+// const session = client.startSession();
+// try {
+//   session.startTransaction();
+//   await collection.updateOne({ name: 'John' }, { $set: { name: 'Johnny' } }, { session });
+//   await collection.insertOne({ name: 'New Doc' }, { session });
+//   await session.commitTransaction();
+// } catch (error) {
+//   await session.abortTransaction();
+//   console.error(error);
+// } finally {
+//   session.endSession();
+// }
+
+
+
+//Bulk Operations
+// const bulkOps = [
+//   { insertOne: { document: { name: 'Alice' } } },
+//   { updateOne: { filter: { name: 'Bob' }, update: { $set: { age: 30 } } } },
+//   { deleteOne: { filter: { status: 'inactive' } } }
+// ];
+// const result = await collection.bulkWrite(bulkOps);
+
+
+//Query Helpers
+// userSchema.query.byName = function(name) {
+//   return this.where({ name: new RegExp(name, 'i') });
+// };
+
+// // Usage
+// const users = await User.find().byName('john');
+
+
+//Text Search
+// await collection.createIndex({ content: 'text' });
+
+// const results = await collection.find({ $text: { $search: 'mongodb express' } }).toArray();

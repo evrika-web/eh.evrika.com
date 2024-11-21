@@ -18,8 +18,14 @@ function getMongoApiRouter(
   hiddenCollectionFields = [],
   optionalParams = {}
 ) {
-  const { singleDataFilter, additionalDataQuery, postBodyModifier, resultBodyModifier, singleResultBodyModifier } =
-    optionalParams;
+  const {
+    singleDataFilter,
+    additionalDataQuery,
+    postBodyModifier,
+    resultBodyModifier,
+    singleResultBodyModifier,
+    putBodyModifier
+  } = optionalParams;
   const router = express.Router();
   router.get(multipleRoute + "/:page", async (req, res) => {
     const { page } = req.params;
@@ -34,10 +40,10 @@ function getMongoApiRouter(
         (limit = parseInt(query.limit) || 24)
       );
       if (result) {
-        if(resultBodyModifier && result.result.length !== 0){
+        if (resultBodyModifier && result.result.length !== 0) {
           result = resultBodyModifier(result);
         }
-        res.json(result);        
+        res.json(result);
       } else {
         res.status(404).send({ error: "Not found" });
       }
@@ -50,8 +56,8 @@ function getMongoApiRouter(
   router.delete(singleRoute + "/:id", authenticateToken, async (req, res) => {
     let { id } = req.params;
     const filter = singleDataFilter
-        ? singleDataFilter(id)
-        : { _id: getObjectId(param) };
+      ? singleDataFilter(id)
+      : { _id: getObjectId(param) };
 
     try {
       const result = await deleteOne(collectionName, filter);
@@ -69,14 +75,18 @@ function getMongoApiRouter(
 
   router.put(singleRoute + "/:id", async (req, res) => {
     let { id } = req.params;
+    let insertedData = req.body.update;
     const filter = singleDataFilter
-        ? singleDataFilter(id)
-        : { _id: getObjectId(param) };
+      ? singleDataFilter(id)
+      : { _id: getObjectId(param) };
+    if (putBodyModifier) {
+      insertedData = putBodyModifier(insertedData);
+    }
     try {
       const result = await updateOne(
         collectionName,
-        { $set: req.body.update },
-        filter 
+        { $set: insertedData },
+        filter
       );
       res.json({ updateCount: result });
     } catch (err) {
@@ -88,25 +98,33 @@ function getMongoApiRouter(
   router.post(singleRoute, async (req, res) => {
     try {
       let insertedData = req.body;
-      if(collectionName ==='marketplace-reasons'){
-        const filter = singleDataFilter(insertedData.vendor_code)
+      if (collectionName === "marketplace-reasons") {
+        const filter = singleDataFilter(insertedData.vendor_code);
         let data = await getOneFromCollectionByFilter(collectionName, filter);
-        if (data){
-          data.reasons.push({reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')})
+        if (data) {
+          data.reasons.push({
+            reason: insertedData.reason,
+            created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+          });
           await updateOne(
             collectionName,
             { $set: data },
-            { _id: insertedData.vendor_code}
+            { _id: insertedData.vendor_code }
           );
           res.json({ status: "success" });
-        } else{
-          insertedData._id = insertedData.vendor_code
-          insertedData.reasons=[{reason: insertedData.reason, created_at: moment().format('YYYY-MM-DD HH:mm:ss')}]
-          delete insertedData.reason
+        } else {
+          insertedData._id = insertedData.vendor_code;
+          insertedData.reasons = [
+            {
+              reason: insertedData.reason,
+              created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+            },
+          ];
+          delete insertedData.reason;
           await insertOneData(collectionName, insertedData);
           res.json({ status: "success" });
         }
-      } else{
+      } else {
         if (postBodyModifier) {
           insertedData = postBodyModifier(insertedData);
         }
@@ -133,12 +151,12 @@ function getMongoApiRouter(
         };
       }
       if (data) {
-        if(singleResultBodyModifier){
+        if (singleResultBodyModifier) {
           data = singleResultBodyModifier(data);
         } else {
-          data = { result: data }
+          data = { result: data };
         }
-        res.json(data);       
+        res.json(data);
       } else {
         res.status(404).send({ error: "Not found" });
       }

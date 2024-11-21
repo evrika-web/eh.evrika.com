@@ -12,6 +12,8 @@ const mainRouter = require("./router/mainRouter");
 const catalogRouter = require("./router/catalogRouter");
 const halykMarketRouter = require("./router/halykMarketRouter");
 const kaspiMarketRouter = require("./router/kaspiMarketRouter");
+const fileSystemBinaryRouter = require("./router/fileSystemBinaryRouter");
+const fileSystemFSRouter = require("./router/fileSystemFSRouter");
 const port = process.env.PORT;
 const host = process.env.HOST;
 const dbName = process.env.MONGO_DB_NAME || "search-system";
@@ -23,6 +25,7 @@ require("dotenv").config();
 const { getAppLog } = require("./utility/appLoggers");
 const serverLog = getAppLog("Express");
 const mongoLog = getAppLog("MongoDB");
+const jwt = require('jsonwebtoken');
 
 //Добавление логирования ошибок и запросов
 const SimpleNodeLogger = require("simple-node-logger");
@@ -35,8 +38,9 @@ opts = {
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
-//ограничение в файлах json до 50МБ
-app.use(express.json({ limit: "50mb" }));
+
+//ограничение в файлах json до 100МБ
+app.use(express.json({ limit: "100mb" }));
 
 // const { useTreblle } = require('treblle')
 
@@ -48,6 +52,20 @@ app.use(express.json({ limit: "50mb" }));
 //Проверка работает ли сервер
 app.get("/ping", (req, res) => {
   res.send("pong");
+});
+
+// Маршрут для аутентификации и получения токена
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Здесь должна быть проверка по базе данных или другому источнику данных
+  if (username === 'admin' && password === 'x1z-uuyoT$lul2N*') {
+    const user = { username };
+    const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ accessToken });
+  } else {
+    res.status(401).json({ message: 'Неправильное имя пользователя или пароль' });
+  }
 });
 
 //Подключение запросов по акциям
@@ -198,6 +216,15 @@ app.use("/halyk", halykMarketRouter);
 
 //Подключение запросов по kaspi market
 app.use("/kaspi", kaspiMarketRouter);
+
+//Подключение запросов по файловой системе Mongo Binary
+app.use("/files-binary", fileSystemBinaryRouter);
+
+// Middleware для обработки данных формы
+app.use(express.urlencoded({ extended: true }));
+
+//Подключение запросов по файловой системе FS
+app.use("/files", fileSystemFSRouter);
 
 //Определение порта и хоста для сервера
 app.listen(port, host, async () => {
