@@ -1,33 +1,24 @@
 const express = require("express");
 const router = express.Router();
-const moment = require("moment");
 require("dotenv").config();
-const SimpleNodeLogger = require("simple-node-logger");
 const { getAppLog } = require("../utility/appLoggers");
 const searchLog = getAppLog("Search");
-const { default: axios } = require("axios");
 const {
   aggregateCollection,
   getAllFromCollection,
   getDistinct,
   getOneFromCollectionByFilter,
-  insertManyData,
-  replaceOne,
 } = require("../database/mongoDb/mongoQuerie");
 const catalogMatching = require("../utility/dataMatching");
-const { XMLParser } = require("fast-xml-parser");
 const {
   updateData,
   updateCategories,
   updateCities,
   updateBranches,
+  updateCosts,
+  updateStocks,
 } = require("../api/catalog/catalogApi");
 
-opts = {
-  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-search.log`,
-  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
-};
-const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 router.post("/catalog/products", async (req, res) => {
   var body = req.body;
@@ -345,10 +336,7 @@ router.get("/update-products", async (req, res) => {
   try {
     let catalogUpdate = await updateData();
     if (catalogUpdate.status === 200)
-      {log.info("Update products log ", {
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
+      {
       res.status(200).json({
         created: catalogUpdate.created,
         updated: catalogUpdate.updated,
@@ -366,14 +354,7 @@ router.get("/update-categories", async (req, res) => {
   try {
     let catalogUpdate = await updateCategories();
     if (catalogUpdate.status === 200) {
-      log.info("Update categories log ", {
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
-      res.status(200).send({
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
+      res.status(200).send(catalogUpdate);
     } else {
       throw new Error("Update categories data error: ", catalogUpdate.error);
     }
@@ -387,14 +368,7 @@ router.get("/update-cities", async (req, res) => {
   try {
     let catalogUpdate = await updateCities();
     if (catalogUpdate.status === 200) {
-      log.info("Update cities log ", {
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
-      res.status(200).send({
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
+      res.status(200).send(catalogUpdate);
     } else {
       throw new Error("Update cities data error: ", catalogUpdate.error);
     }
@@ -408,14 +382,7 @@ router.get("/update-branches", async (req, res) => {
   try {
     let catalogUpdate = await updateBranches();
     if (catalogUpdate.status === 200) {
-      log.info("Update branches log ", {
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
-      res.status(200).send({
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
+      res.status(200).send(catalogUpdate);
     } else {
       throw new Error("Update branches data error: ", catalogUpdate.error);
     }
@@ -425,18 +392,41 @@ router.get("/update-branches", async (req, res) => {
   }
 });
 
+router.get("/update-costs", async (req, res) => {
+  try {
+    let catalogUpdate = await updateCosts();
+    if (catalogUpdate.status === 200) {      
+      res.status(200).send(catalogUpdate);
+    } else {
+      throw new Error("Update costs data error: ", catalogUpdate.error);
+    }
+  } catch (err) {
+    console.log("CATCH: " + err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+
 router.get("/update-stocks", async (req, res) => {
   try {
-    let catalogUpdate = await updateStocks();
-    if (catalogUpdate.status === 200) {
-      log.info("Update stocks log ", {
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
-      res.status(200).send({
-        created: catalogUpdate.created,
-        updated: catalogUpdate.updated,
-      });
+    const catalogUpdate = await updateStocks();
+    if (catalogUpdate.status === 200) {     
+      res.status(200).send(catalogUpdate);
+    } else {
+      throw new Error("Update stocks data error: ", catalogUpdate.error);
+    }
+  } catch (err) {
+    console.log("CATCH: " + err);
+    res.status(500).send({ error: err.toString() });
+  }
+});
+
+router.get("/product/:id/:slug", async (req, res) => {
+  const { id, slug } = req.params;
+  const { city_id, locale } = req.query;
+  try {    
+    const catalogUpdate = await updateStocks();
+    if (catalogUpdate.status === 200) {     
+      res.status(200).send(catalogUpdate);
     } else {
       throw new Error("Update stocks data error: ", catalogUpdate.error);
     }

@@ -2,12 +2,15 @@ const connectMongo = require("./mongoClient");
 const mongodb = require("mongodb");
 const { GridFSBucket } = require("mongodb");
 require("dotenv").config();
+
 let db = null;
-let bucket =null
+let bucket = null;
+let client = null;
+
 async function connectDb(url, dbName) {
   try {
     if (!db) {
-      const client = await connectMongo(url);
+      client = await connectMongo(url);
       db = await client.db(dbName);
       bucket = new GridFSBucket(db);
       return true;
@@ -122,7 +125,7 @@ async function update(collectionName, update, filter = {}) {
 
 async function updateOne(collectionName, update, filter = {}) {
   const collection = db.collection(collectionName);
-  const result = await collection.updateOne(filter, update);
+  const result = await collection.updateOne(filter, update, (upsert = true));
   return result.modifiedCount;
 }
 
@@ -205,45 +208,124 @@ async function geoNear(collectionName, coordinates, options = {}) {
 
 // Perform a geo haystack search (requires a haystack index).
 async function geoHaystackSearch(collectionName, x, y, options = {}) {
-    const collection = db.collection(collectionName);
-    const result = await collection.geoHaystackSearch(x, y, options);
-    return result;
-  }
-  
+  const collection = db.collection(collectionName);
+  const result = await collection.geoHaystackSearch(x, y, options);
+  return result;
+}
+
 //Group documents in a collection (deprecated in favor of aggregation).
-async function groupDocuments(collectionName, keys, condition, initial, reduce, finalize) {
-    const collection = db.collection(collectionName);
-    const result = await collection.group(keys, condition, initial, reduce, finalize);
-    return result;
-  }
+async function groupDocuments(
+  collectionName,
+  keys,
+  condition,
+  initial,
+  reduce,
+  finalize
+) {
+  const collection = db.collection(collectionName);
+  const result = await collection.group(
+    keys,
+    condition,
+    initial,
+    reduce,
+    finalize
+  );
+  return result;
+}
 
-  //Get execution statistics for a query.
-  async function explainQuery(collectionName, filter = {}) {
-    const collection = db.collection(collectionName);
-    const explanation = await collection.find(filter).explain();
-    return explanation;
-  }
+//Get execution statistics for a query.
+async function explainQuery(collectionName, filter = {}) {
+  const collection = db.collection(collectionName);
+  const explanation = await collection.find(filter).explain();
+  return explanation;
+}
 
-  // Uploading a file
+// Uploading a file
 async function uploadFile(filename, fileStream, options = {}) {
-    const uploadStream = bucket.openUploadStream(filename, options);
-    fileStream.pipe(uploadStream);
-    return new Promise((resolve, reject) => {
-      uploadStream.on("finish", () => resolve(uploadStream.id));
-      uploadStream.on("error", reject);
-    });
-  }
-  // Downloading a file
+  const uploadStream = bucket.openUploadStream(filename, options);
+  fileStream.pipe(uploadStream);
+  return new Promise((resolve, reject) => {
+    uploadStream.on("finish", () => resolve(uploadStream.id));
+    uploadStream.on("error", reject);
+  });
+}
+// Downloading a file
 function downloadFile(fileId, destinationStream, options = {}) {
-    const downloadStream = bucket.openDownloadStream(fileId, options);
-    downloadStream.pipe(destinationStream);
-    return new Promise((resolve, reject) => {
-      downloadStream.on("end", resolve);
-      downloadStream.on("error", reject);
-    });
+  const downloadStream = bucket.openDownloadStream(fileId, options);
+  downloadStream.pipe(destinationStream);
+  return new Promise((resolve, reject) => {
+    downloadStream.on("end", resolve);
+    downloadStream.on("error", reject);
+  });
+}
+
+async function updateFullCollection(collectionName, data) {
+  let responseMessage = ''
+  try {
+    const oldCollection = db.collection(collectionName); // Старая коллекция
+    const newCollection = db.collection(`${collectionName}_new`); // Временная коллекция
+
+    // Старт транзакции
+    const session = client.startSession();
+    session.startTransaction();
+    try {
+      let filteredData = data;
+      if(collectionName==="stocks"){
+        // Фильтруем данные
+        filteredData = data.filter(
+          (item) => item.branch_guid && item.product_guid
+        );
+      }
+      // Добавляем только нужные документы в новую коллекцию
+      if (filteredData.length > 0) {
+        await newCollection.insertMany(filteredData, { session });
+        console.log(
+          `Inserted ${filteredData.length} documents into the new collection.`
+        );
+        responseMessage = `Inserted ${filteredData.length} documents into the new collection.`
+      } else {
+        // Удаляем старую коллекцию
+        await newCollection.drop({ session });
+        console.log("No valid data to insert into the new collection.");
+        return {
+          statusResponse: "error",
+          error: "No valid data to insert into the new collection.",
+        };
+      }
+
+      // Удаляем старую коллекцию
+      await oldCollection.drop({ session });
+      console.log("Old collection dropped.");
+
+      // Переименовываем новую коллекцию
+      await newCollection.rename(collectionName, { session });
+      await newCollection.createIndex({ branch_guid: 1, product_guid: 1 }, { session });
+      console.log("New collection renamed to 'stocks'.");
+
+      // Подтверждаем транзакцию
+      await session.commitTransaction();
+
+      
+    } catch (error) {
+      session.abortTransaction();
+    } finally {
+      session.endSession();
+      console.log("🚀 ~ updateFullCollection ~ responseMessage:", responseMessage)
+      return ({ statusResponse: "success", message: responseMessage });
+    }
+  } catch (error) {
+    console.error(error);
+    return {
+      statusResponse: "error",
+      error: error,
+    };
   }
+}
 module.exports = {
   connectDb,
+  getDb: () => db,
+  getBucket: () => bucket,
+  getClient: () => client,
   getAllFromCollection,
   getOneFromCollectionByFilter,
   getOneFromCollectionByID,
@@ -271,4 +353,5 @@ module.exports = {
   explainQuery,
   uploadFile,
   downloadFile,
+  updateFullCollection,
 };

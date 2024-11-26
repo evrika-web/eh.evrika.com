@@ -2,22 +2,13 @@ const { default: axios } = require("axios");
 const { XMLParser } = require("fast-xml-parser");
 const {
   getAllFromCollection,
-  insertOneData,
   replaceOne,
   insertManyData,
-  update,
   updateOne,
+  updateFullCollection,
 } = require("../../database/mongoDb/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
-
-//add logger
-const SimpleNodeLogger = require("simple-node-logger");
 const moment = require("moment");
-opts = {
-  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalogAPI.log`,
-  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
-};
-const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function updateData() {
   try {
@@ -149,14 +140,11 @@ async function updateData() {
             element.filter_specifications[index].id = parseInt(
               element.filter_specifications[index].specid
             );
-            delete element.filter_specifications[index].specid
+            delete element.filter_specifications[index].specid;
 
             element.filter_specifications[index].sort =
-              parseInt(
-                element.filter_specifications[index].specsort
-              ) || 0;
-            delete element.filter_specifications[index].specsort
-            
+              parseInt(element.filter_specifications[index].specsort) || 0;
+            delete element.filter_specifications[index].specsort;
           }
         }
         delete element.param;
@@ -208,42 +196,18 @@ async function updateCategories() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/categories?locale=ru", false);
-    log.info(
-      moment().format("HH:mm DD-MM-YYYY"),
-      " Update categories ",
-      dataFetched
-    );
     let data = dataFetched.data.categories;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
-        const allDBids = await getAllFromCollection(
-          "categories",
-          (fields = { _id: 1 }),
-          (filter = {}),
-          (page = "all")
-        );
-        let allDBidsMapped = [];
-        if (Array.isArray(allDBids.result)) {
-          allDBids.result.map((e) => {
-            allDBidsMapped.push(e._id);
-          });
+        const updatedData = await updateFullCollection("categories", data);
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update data: ",
+            updatedData.error
+          );
         }
-        let updatedCount = 0;
-        let createdCount = 0;
-        for (var i in data) {
-          var item = data[i];
-          item._id = item.id;
-          // If the category is not on DB yet, we add it to DB
-          if (!allDBidsMapped.includes(item.id)) {
-            await insertOneData("categories", item);
-            createdCount += 1;
-          } else {
-            // If the category is already on DB but has changed its name or parent, we update it
-            await replaceOne("categories", item, { _id: item._id });
-            updatedCount += 1;
-          }
-        }
-        return { status: 200, created: createdCount, updated: updatedCount };
       } else {
         throw new Error("No categories received from the server");
       }
@@ -259,42 +223,18 @@ async function updateCities() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/cities", false);
-    log.info(
-      moment().format("HH:mm DD-MM-YYYY"),
-      "Update cities ",
-      dataFetched
-    );
     let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
-        const allDBids = await getAllFromCollection(
-          "cities",
-          (fields = { _id: 1 }),
-          (filter = {}),
-          (page = "all")
-        );
-        let allDBidsMapped = [];
-        if (Array.isArray(allDBids.result)) {
-          allDBids.result.map((e) => {
-            allDBidsMapped.push(e._id);
-          });
+        const updatedData = await updateFullCollection("cities", data);
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update data: ",
+            updatedData.error
+          );
         }
-        let updatedCount = 0;
-        let createdCount = 0;
-        for (var i in data) {
-          var item = data[i];
-          item._id = item.id;
-          // If the cities is not on DB yet, we add it to DB
-          if (!allDBidsMapped.includes(item.id)) {
-            await insertOneData("cities", item);
-            createdCount += 1;
-          } else {
-            // If the cities is already on DB but has changed its name or parent, we update it
-            await replaceOne("cities", item, { _id: item._id });
-            updatedCount += 1;
-          }
-        }
-        return { status: 200, created: createdCount, updated: updatedCount };
       } else {
         throw new Error("No cities received from the server");
       }
@@ -306,48 +246,101 @@ async function updateCities() {
     return { status: 500, error: err };
   }
 }
+
 async function updateBranches() {
   try {
     let dataFetched;
     dataFetched = await dataFetching("/branches", false);
-    log.info(
-      moment().format("HH:mm DD-MM-YYYY"),
-      " Update branches ",
-      dataFetched
+
+    let data = dataFetched.data;
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const updatedData = await updateFullCollection("branches", data);
+        console.log("🚀 ~ updateBranches ~ updatedData:", updatedData)
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update data: ",
+            updatedData.error
+          );
+        }
+      } else {
+        throw new Error("No branches received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${dataFetched}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err };
+  }
+}
+
+async function updateCosts() {
+  try {
+    let dataFetched;
+    dataFetched = await dataFetching(
+      "http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost",
+      true,
+      (config = {
+        auth: {
+          username: "HalykEvrika",
+          password: "HalykEvrika",
+        },
+      })
     );
     let data = dataFetched.data;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
-        const allDBids = await getAllFromCollection(
-          "branches",
-          (fields = { _id: 1 }),
-          (filter = {}),
-          (page = "all")
-        );
-        let allDBidsMapped = [];
-        if (Array.isArray(allDBids.result)) {
-          allDBids.result.map((e) => {
-            allDBidsMapped.push(e._id);
-          });
+        const updatedData = await updateFullCollection("costs", data);
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update data: ",
+            updatedData.error
+          );
         }
-        let updatedCount = 0;
-        let createdCount = 0;
-        for (var i in data) {
-          var item = data[i];
-          item._id = item.id;
-          // If the branches is not on DB yet, we add it to DB
-          if (!allDBidsMapped.includes(item.id)) {
-            await insertOneData("branches", item);
-            createdCount += 1;
-          } else {
-            // If the branches is already on DB but has changed its name or parent, we update it
-            await replaceOne("branches", item, { _id: item._id });
-            updatedCount += 1;
-          }
-        }
-        return { status: 200, created: createdCount, updated: updatedCount };
       } else {
-        throw new Error("No branches received from the server");
+        throw new Error("No costs received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${dataFetched}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err };
+  }
+}
+
+async function updateStocks() {
+  try {
+    let dataFetched = null
+    dataFetched = await dataFetching(
+      "http://integration.evrika.com/EvrikaOrders/ru_RU/hs/site-api/get_stocks",
+      true,
+      (config = {
+        auth: {
+          username: "HalykEvrika",
+          password: "HalykEvrika",
+        },
+      })
+    );
+    let data = dataFetched.data;
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const updatedData = await updateFullCollection("stocks", data);
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update data: ",
+            updatedData.error
+          );
+        }
+      } else {
+        throw new Error("No stocks received from the server");
       }
     } else {
       throw new Error(`Server responded ${dataFetched}`);
@@ -363,34 +356,9 @@ module.exports = {
   updateCategories,
   updateCities,
   updateBranches,
+  updateCosts,
+  updateStocks,
 };
-
-
-
-// ToDo: Update ALL code here to transaction
-// const session = client.startSession();
-// try {
-//   session.startTransaction();
-//   await collection.updateOne({ name: 'John' }, { $set: { name: 'Johnny' } }, { session });
-//   await collection.insertOne({ name: 'New Doc' }, { session });
-//   await session.commitTransaction();
-// } catch (error) {
-//   await session.abortTransaction();
-//   console.error(error);
-// } finally {
-//   session.endSession();
-// }
-
-
-
-//Bulk Operations
-// const bulkOps = [
-//   { insertOne: { document: { name: 'Alice' } } },
-//   { updateOne: { filter: { name: 'Bob' }, update: { $set: { age: 30 } } } },
-//   { deleteOne: { filter: { status: 'inactive' } } }
-// ];
-// const result = await collection.bulkWrite(bulkOps);
-
 
 //Query Helpers
 // userSchema.query.byName = function(name) {
@@ -399,7 +367,6 @@ module.exports = {
 
 // // Usage
 // const users = await User.find().byName('john');
-
 
 //Text Search
 // await collection.createIndex({ content: 'text' });
