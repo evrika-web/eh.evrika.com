@@ -59,7 +59,7 @@ app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   // Здесь должна быть проверка по базе данных или другому источнику данных
-  if (username === 'admin' && password === 'x1z-uuyoT$lul2N*') {
+  if (username === process.env.AUTH_LOGIN | 'admin' && password === process.env.AUTH_PASSWORD | 'x1z-uuyoT$lul2N*') {
     const user = { username };
     const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ accessToken });
