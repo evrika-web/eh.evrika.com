@@ -17,10 +17,7 @@ router.get("/update-products", async (req, res) => {
   try {
     let halykMarketUpdate = await updateDataFromXML();
     if (halykMarketUpdate.status === 200) {
-      log.info("Update products log ", {
-        created: halykMarketUpdate.created,
-        updated: halykMarketUpdate.updated,
-      });
+      
       res.status(200).json({
         created: halykMarketUpdate.created,
         updated: halykMarketUpdate.updated,

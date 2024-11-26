@@ -117,10 +117,6 @@ async function setPromotion(promo) {
     } else {
         var resulInsert
       await dbQuerie.createPromotionData(dataPromocode, (insertPromotions) => {
-        log.info(
-          "POST result /post-promotion for promotions ",
-          insertPromotions
-        );
         resulInsert = insertPromotions
       });      
       return 'Акции обновлены, последний добавленный id: ' + resulInsert;
@@ -135,16 +131,8 @@ async function setPromotion(promo) {
 async function checkPromotionsActivity() {
   try {
     await dbQuerie.checkPromotionStart((updatedPromotions) => {
-      log.info(
-        "GET result /check-promotions-activity for promotions start",
-        updatedPromotions
-      );
     });
     await dbQuerie.checkPromotionsEnd((updatedPromotions) => {
-      log.info(
-        "GET result /check-promotions-activity for promotions end",
-        updatedPromotions
-      );
     });
     return "All promotions is up to date";
   } catch (err) {

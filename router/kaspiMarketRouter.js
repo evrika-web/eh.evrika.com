@@ -17,10 +17,7 @@ router.get("/update-products", async (req, res) => {
   try {
     let kaspiUpdate = await updateDataFromXMLKaspi();
     if (kaspiUpdate.status === 200) {
-      log.info("Update products log ", {
-        created: kaspiUpdate.created,
-        updated: kaspiUpdate.updated,
-      });
+     
       res.status(200).json({
         created: kaspiUpdate.created,
         updated: kaspiUpdate.updated,
