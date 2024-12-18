@@ -17,6 +17,7 @@ const {
   updateBranches,
   updateCosts,
   updateStocks,
+  updateBankCoefficients,
 } = require("../api/catalog/catalogApi");
 
 
@@ -420,20 +421,17 @@ router.get("/update-stocks", async (req, res) => {
   }
 });
 
-router.get("/product/:id/:slug", async (req, res) => {
-  const { id, slug } = req.params;
-  const { city_id, locale } = req.query;
-  try {    
-    const catalogUpdate = await updateStocks();
-    if (catalogUpdate.status === 200) {     
+router.get("/update-bank-coefficients", async (req, res) => {
+  try {
+    let catalogUpdate = await updateBankCoefficients();
+    if (catalogUpdate.status === 200) {
       res.status(200).send(catalogUpdate);
     } else {
-      throw new Error("Update stocks data error: ", catalogUpdate.error);
+      throw new Error("Update bank-coefficients data error: ", catalogUpdate.error);
     }
   } catch (err) {
     console.log("CATCH: " + err);
     res.status(500).send({ error: err.toString() });
   }
 });
-
 module.exports = router;

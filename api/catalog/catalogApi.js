@@ -256,7 +256,6 @@ async function updateBranches() {
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const updatedData = await updateFullCollection("branches", data);
-        console.log("🚀 ~ updateBranches ~ updatedData:", updatedData)
         if (updatedData.statusResponse === "success") {
           return { status: 200, message: updatedData.message };
         } else {
@@ -351,6 +350,34 @@ async function updateStocks() {
   }
 }
 
+async function updateBankCoefficients() {
+  try {
+    let dataFetched;
+    dataFetched = await dataFetching("/bank/coefficients", false);
+
+    let data = dataFetched.data;
+    if (dataFetched.status === 200) {
+      if (Array.isArray(data) && data.length !== 0) {
+        const updatedData = await updateFullCollection("bank-coefficients", data);
+        if (updatedData.statusResponse === "success") {
+          return { status: 200, message: updatedData.message };
+        } else {
+          throw new Error(
+            "Error in transaction update bank-coefficients: ",
+            updatedData.error
+          );
+        }
+      } else {
+        throw new Error("No bank-coefficients received from the server");
+      }
+    } else {
+      throw new Error(`Server responded ${dataFetched}`);
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, error: err };
+  }
+}
 module.exports = {
   updateData,
   updateCategories,
@@ -358,6 +385,7 @@ module.exports = {
   updateBranches,
   updateCosts,
   updateStocks,
+  updateBankCoefficients,
 };
 
 //Query Helpers

@@ -82,12 +82,15 @@ function getMongoApiRouter(
     if (putBodyModifier) {
       insertedData = putBodyModifier(insertedData);
     }
+    // console.log("🚀 ~ router.put ~ insertedData:", insertedData)
     try {
       const result = await updateOne(
         collectionName,
         { $set: insertedData },
-        filter
+        filter,
+        true
       );
+      // console.log("🚀 ~ router.put ~ result:", result)
       res.json({ updateCount: result });
     } catch (err) {
       console.log(err);
@@ -128,6 +131,7 @@ function getMongoApiRouter(
         if (postBodyModifier) {
           insertedData = postBodyModifier(insertedData);
         }
+        // console.log("🚀 ~ router.post ~ insertedData:", insertedData)
         const result = await insertOneData(collectionName, insertedData);
         res.json({ result });
       }

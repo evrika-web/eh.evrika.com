@@ -123,10 +123,10 @@ async function update(collectionName, update, filter = {}) {
   return result.modifiedCount;
 }
 
-async function updateOne(collectionName, update, filter = {}) {
+async function updateOne(collectionName, update, filter = {}, upsert = false) {
   const collection = db.collection(collectionName);
-  const result = await collection.updateOne(filter, update, (upsert = true));
-  return result.modifiedCount;
+  const result = await collection.updateOne(filter, update, upsert);
+  return result;
 }
 
 async function findOneAndReplace(collectionName, replace, filter = {}) {
@@ -262,11 +262,13 @@ function downloadFile(fileId, destinationStream, options = {}) {
 async function updateFullCollection(collectionName, data) {
   let responseMessage = ''
   try {
-    const oldCollection = db.collection(collectionName); // Старая коллекция
-    const newCollection = db.collection(`${collectionName}_new`); // Временная коллекция
-
     // Старт транзакции
     const session = client.startSession();
+
+    const oldCollection = db.collection(collectionName); // Старая коллекция
+    console.log("🚀 ~ updateFullCollection ~ collectionName:", collectionName)
+    const newCollection = db.collection(`${collectionName}_new`); // Временная коллекция
+
     session.startTransaction();
     try {
       let filteredData = data;
@@ -278,13 +280,13 @@ async function updateFullCollection(collectionName, data) {
       }
       // Добавляем только нужные документы в новую коллекцию
       if (filteredData.length > 0) {
-        await newCollection.insertMany(filteredData, { session });
+        responseData = await newCollection.insertMany(filteredData, { session });
         console.log(
-          `Inserted ${filteredData.length} documents into the new collection.`
+          `Inserted ${JSON.stringify(responseData)} documents into the new collection.`
         );
         responseMessage = `Inserted ${filteredData.length} documents into the new collection.`
       } else {
-        // Удаляем старую коллекцию
+        // Удаляем новую коллекцию
         await newCollection.drop({ session });
         console.log("No valid data to insert into the new collection.");
         return {
@@ -299,8 +301,11 @@ async function updateFullCollection(collectionName, data) {
 
       // Переименовываем новую коллекцию
       await newCollection.rename(collectionName, { session });
+
+      if(collectionName === 'stocks')
       await newCollection.createIndex({ branch_guid: 1, product_guid: 1 }, { session });
-      console.log("New collection renamed to 'stocks'.");
+
+      console.log("New collection renamed");
 
       // Подтверждаем транзакцию
       await session.commitTransaction();

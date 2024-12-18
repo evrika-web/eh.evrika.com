@@ -10,6 +10,7 @@ const {
   updateBranches,
   updateCosts,
   updateStocks,
+  updateBankCoefficients,
 } = require("../api/catalog/catalogApi");
 const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
 const { updateDataFromXMLKaspi } = require("../api/kaspiMarket/kaspiMarketApi");
@@ -28,8 +29,7 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
 //   if (catalogUpdate.status === 200) {
 //     const end = new Date().getTime();
 //     log.info("Daily update products log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
+//       ...catalogUpdate,
 //       time: `Execution time: ${end - start}ms`,
 //     });
 //   } else {
@@ -45,8 +45,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   if (catalogUpdate.status === 200) {
     const end = new Date().getTime();
     log.info("Daily update categories log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
+      ...catalogUpdate,
       time: `Execution time: ${end - start}ms`,
     });
   } else {
@@ -62,8 +61,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   if (catalogUpdate.status === 200) {
     const end = new Date().getTime();
     log.info("Daily update cities log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
+      ...catalogUpdate,
       time: `Execution time: ${end - start}ms`,
     });
   } else {
@@ -80,8 +78,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   {
     const end = new Date().getTime();
     log.info("Daily update branches log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
+      ...catalogUpdate,
       time: `Execution time: ${end - start}ms`,
     });
   }
@@ -98,8 +95,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   if (catalogUpdate.status === 200) {
     const end = new Date().getTime();
     log.info("Daily update products halyk log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
+      ...catalogUpdate,
       time: `Execution time: ${end - start}ms`,
     });
   } else {
@@ -115,8 +111,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
   if (catalogUpdate.status === 200) {
     const end = new Date().getTime();
     log.info("Daily update products kaspi log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
+      ...catalogUpdate,
       time: `Execution time: ${end - start}ms`,
     });
   } else {
@@ -132,8 +127,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 //   if (catalogUpdate.status === 200) {
 //     const end = new Date().getTime();
 //     log.info("Daily update costs log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
+//       ...catalogUpdate,
 //       time: `Execution time: ${end - start}ms`,
 //     });
 //   } else {
@@ -149,11 +143,28 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 //   if (catalogUpdate.status === 200) {
 //     const end = new Date().getTime();
 //     log.info("Daily update stocks log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
+//       ...catalogUpdate,
 //       time: `Execution time: ${end - start}ms`,
 //     });
 //   } else {
 //     log.error("Daily update stocks data error: ", catalogUpdate.error);
 //   }
 // });
+
+//Обновление данных по городам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update bank-coefficients");
+  let catalogUpdate = await updateBankCoefficients();
+  if (catalogUpdate.status === 200)
+  {
+    const end = new Date().getTime();
+    log.info("Daily update bank-coefficients log ", {
+      ...catalogUpdate,
+      time: `Execution time: ${end - start}ms`,
+    });
+  }
+  else {
+    log.error("Daily update bank-coefficients data error: ", catalogUpdate.error);
+  }
+});

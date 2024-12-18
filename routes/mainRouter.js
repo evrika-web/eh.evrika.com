@@ -9,12 +9,12 @@ const router=[
   getMongoApiRouter('/category', '/categories', 'categories', [], {
     singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
   }),
-  getMongoApiRouter('/filter', '/filters', 'filters', [], {
-    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
-  }),
-  getMongoApiRouter('/spec', '/specs', 'specs', [], {
-    singleDataFilter: (param) => ({ _id: getObjectId(param) }),
-  }),
+  // getMongoApiRouter('/filter', '/filters', 'filters', [], {
+  //   singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  // }),
+  // getMongoApiRouter('/spec', '/specs', 'specs', [], {
+  //   singleDataFilter: (param) => ({ _id: getObjectId(param) }),
+  // }),
   getMongoApiRouter('/stock', '/stocks', 'stocks', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
@@ -24,9 +24,9 @@ const router=[
   getMongoApiRouter('/product-of-the-day', '/products-of-the-day', 'products', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }),
   }),
-  getMongoApiRouter('/spec_value', '/spec_values', 'spec_values', [], {
-    singleDataFilter: (param) => ({ _id: param.toString() }), postBodyModifier:(body) => ({...body, _id:  body.id.toString() })
-  }),
+  // getMongoApiRouter('/spec_value', '/spec_values', 'spec_values', [], {
+  //   singleDataFilter: (param) => ({ _id: param.toString() }), postBodyModifier:(body) => ({...body, _id:  body.id.toString() })
+  // }),
   getMongoApiRouter('/city', '/cities', 'cities', [], {
     singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
   }),
@@ -62,6 +62,15 @@ const router=[
   }),
   getMongoApiRouter('/cost', '/costs', 'costs', [], {
     singleDataFilter: (param) => ({ _id: param.toString() }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.product_code)})
+  }),
+  getMongoApiRouter('/specification', '/specifications', 'specifications', [], {
+    singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
+  }),
+  getMongoApiRouter('/specvalue', '/specvalues', 'specvalues', [], {
+    singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
+  }),
+  getMongoApiRouter('/bank-coefficient', '/bank-coefficients', 'bank-coefficients', [], {
+    singleDataFilter: (param) => ({ _id: parseInt(param) }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.id)})
   }),
 ]
 
