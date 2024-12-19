@@ -63,6 +63,9 @@ const router=[
   getMongoApiRouter('/cost', '/costs', 'costs', [], {
     singleDataFilter: (param) => ({ _id: param.toString() }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.product_code)})
   }),
+  getMongoApiRouter('/survey', '/surveys', 'surveys', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) })
+  }),
 ]
 
 module.exports = router;
