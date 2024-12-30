@@ -1,6 +1,7 @@
 const { getObjectId } = require("../database/mongoDb/mongoQuerie");
 const getMongoApiRouter = require("../api/mongoApi");
 const { maskPhone } = require("../utility/routerHelper/helpers");
+const moment = require("moment");
 
 const router=[
   getMongoApiRouter('/product', '/products', 'products', [], {
@@ -64,7 +65,7 @@ const router=[
     singleDataFilter: (param) => ({ _id: param.toString() }), postBodyModifier:(body) => ({...body, _id:  parseInt(body.product_code)})
   }),
   getMongoApiRouter('/survey', '/surveys', 'surveys', [], {
-    singleDataFilter: (param) => ({ _id: getObjectId(param) })
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }), postBodyModifier:(body) => ({...body, created_at:  moment().format("YYYY-MM-DD HH:mm:ss")})
   }),
 ]
 
