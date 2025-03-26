@@ -67,6 +67,9 @@ const router=[
   getMongoApiRouter('/survey', '/surveys', 'surveys', [], {
     singleDataFilter: (param) => ({ _id: getObjectId(param) }), postBodyModifier:(body) => ({...body, created_at:  moment().format("YYYY-MM-DD HH:mm:ss")})
   }),
+  getMongoApiRouter('/app-config', '/app-configs', 'evrika-smart-configs', [], {
+    singleDataFilter: (param) => ({ _id: getObjectId(param) }), postBodyModifier:(body) => ({...body, created_at:  moment().format("YYYY-MM-DD HH:mm:ss")})
+  }),
 ]
 
 module.exports = router;
