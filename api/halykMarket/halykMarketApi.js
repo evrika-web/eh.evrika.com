@@ -115,7 +115,22 @@ async function updateDataFromXML() {
     });
     let resultCreate = 0;
     if (createData.length !== 0) {
-      resultCreate = await insertManyData("halyk_market", createData);
+      // Убедимся, что в массиве createData нет дубликатов _id
+      const existingIds = await getAllFromCollection(
+        "halyk_market",
+        { _id: 1 }, // Получаем только _id
+        { _id: { $in: createData.map((item) => item._id) } }, // Фильтруем по _id из createData
+        "all"
+      );
+
+      const existingIdsSet = new Set(existingIds.result.map((item) => item._id));
+      createData = createData.filter((item) => !existingIdsSet.has(item._id)); // Исключаем дубликаты
+
+      if (createData.length > 0) {
+        resultCreate = await insertManyData("halyk_market", createData);
+      } else {
+        console.log("No new data to insert. All _id values already exist.");
+      }
     }
     return { status: 200, created: resultCreate, updated: updatedCount };
   } catch (err) {

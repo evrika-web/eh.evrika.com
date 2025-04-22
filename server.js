@@ -20,7 +20,6 @@ const dbName = process.env.MONGO_DB_NAME || "search-system";
 const url = process.env.MONGO_URL || "mongodb://localhost:27017";
 require("./scheduledJobs/scheduleCatalog");
 require("./scheduledJobs/scheduleLogFiles");
-// require("./scheduledJobs/schedulePromo");
 require("dotenv").config();
 const { getAppLog } = require("./utility/appLoggers");
 const serverLog = getAppLog("Express");

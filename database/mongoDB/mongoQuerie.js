@@ -260,67 +260,74 @@ function downloadFile(fileId, destinationStream, options = {}) {
 }
 
 async function updateFullCollection(collectionName, data) {
-  let responseMessage = ''
+  let responseMessage = '';
+  const session = client.startSession(); // Start a new session
   try {
-    const oldCollection = db.collection(collectionName); // Старая коллекция
-    const newCollection = db.collection(`${collectionName}_new`); // Временная коллекция
+    const oldCollection = db.collection(collectionName);
+    const newCollection = db.collection(`${collectionName}_new`);
 
-    // Старт транзакции
-    const session = client.startSession();
-    session.startTransaction();
-    try {
-      let filteredData = data;
-      if(collectionName==="stocks"){
-        // Фильтруем данные
-        filteredData = data.filter(
-          (item) => item.branch_guid && item.product_guid
-        );
-      }
-      // Добавляем только нужные документы в новую коллекцию
-      if (filteredData.length > 0) {
-        await newCollection.insertMany(filteredData, { session });
-        console.log(
-          `Inserted ${filteredData.length} documents into the new collection.`
-        );
-        responseMessage = `Inserted ${filteredData.length} documents into the new collection.`
-      } else {
-        // Удаляем старую коллекцию
-        await newCollection.drop({ session });
-        console.log("No valid data to insert into the new collection.");
-        return {
-          statusResponse: "error",
-          error: "No valid data to insert into the new collection.",
-        };
-      }
+    session.startTransaction(); // Start the transaction
+    let filteredData = data;
 
-      // Удаляем старую коллекцию
-      await oldCollection.drop({ session });
-      console.log("Old collection dropped.");
-
-      // Переименовываем новую коллекцию
-      await newCollection.rename(collectionName, { session });
-      await newCollection.createIndex({ branch_guid: 1, product_guid: 1 }, { session });
-      console.log("New collection renamed to 'stocks'.");
-
-      // Подтверждаем транзакцию
-      await session.commitTransaction();
-
-      
-    } catch (error) {
-      session.abortTransaction();
-    } finally {
-      session.endSession();
-      console.log("🚀 ~ updateFullCollection ~ responseMessage:", responseMessage)
-      return ({ statusResponse: "success", message: responseMessage });
+    if (collectionName === "stocks") {
+      // Filter data for stocks
+      filteredData = data.filter(
+        (item) => item.branch_guid && item.product_guid
+      );
     }
+
+    if (filteredData.length > 0) {
+      await newCollection.insertMany(filteredData, { session });
+      console.log(
+        `Inserted ${filteredData.length} documents into the new collection.`
+      );
+      responseMessage = `Inserted ${filteredData.length} documents into the new collection.`;
+    } else {
+      console.log("No valid data to insert into the new collection.");
+      return {
+        statusResponse: "error",
+        error: "No valid data to insert into the new collection.",
+      };
+    }
+
+    await session.commitTransaction(); // Commit the transaction
+    console.log("Transaction committed.");
+
+    // Perform drop and rename operations outside the transaction
+    await oldCollection.drop();
+    console.log("Old collection dropped.");
+
+    await newCollection.rename(collectionName);
+    console.log(`New collection renamed to ${collectionName}.`);
+
+    if (collectionName === "stocks") {
+      await newCollection.createIndex({ branch_guid: 1, product_guid: 1 });
+      console.log("Index created for stocks collection.");
+    } else if (collectionName === "costs") {
+      await newCollection.createIndex({ product: 1, product_code: 1 });
+      console.log("Index created for costs collection.");
+    }
+
+    return { statusResponse: "success", message: responseMessage };
   } catch (error) {
-    console.error(error);
+    console.error("Error during transaction:", error);
+    try {
+      if (session.inTransaction()) {
+        await session.abortTransaction(); // Abort the transaction only if it's active
+        console.log("Transaction aborted.");
+      }
+    } catch (abortError) {
+      console.error("Error aborting transaction:", abortError);
+    }
     return {
       statusResponse: "error",
-      error: error,
+      error: error.message,
     };
+  } finally {
+    session.endSession(); // End the session
   }
 }
+
 module.exports = {
   connectDb,
   getDb: () => db,

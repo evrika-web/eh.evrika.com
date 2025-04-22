@@ -284,10 +284,11 @@ async function updateCosts() {
       "http://terrasoft-api.evrika.com/EvrikaOrders/ru_RU/hs/srs/cost",
       true,
       (config = {
-        auth: {
-          username: "HalykEvrika",
-          password: "HalykEvrika",
-        },
+      auth: {
+        username: "HalykEvrika",
+        password: "HalykEvrika",
+      },
+      timeout: 300000, // 5 minutes in milliseconds
       })
     );
     let data = dataFetched.data;
@@ -325,9 +326,14 @@ async function updateStocks() {
           username: "HalykEvrika",
           password: "HalykEvrika",
         },
+        timeout: 300000, // 5 minutes in milliseconds
       })
     );
     let data = dataFetched.data;
+    // const stocksFilePath = path.join(__dirname, "../../data/stocks.json");
+    // const rawData = fs.readFileSync(stocksFilePath, "utf8");
+    // let data = JSON.parse(rawData.trim());
+    // let dataFetched = { status: 200, data: data };
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const updatedData = await updateFullCollection("stocks", data);

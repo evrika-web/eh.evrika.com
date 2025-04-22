@@ -13,6 +13,7 @@ const {
 } = require("../api/catalog/catalogApi");
 const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
 const { updateDataFromXMLKaspi } = require("../api/kaspiMarket/kaspiMarketApi");
+const { updateStockCostOzon } = require("../api/ozonMarket/ozonMarketApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,
@@ -21,21 +22,21 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //Обновление данных по товарам
-// schedule.scheduleJob('*/30 * * * *', async () => {
-//   const start = new Date().getTime();
-//   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update data");
-//   let catalogUpdate = await updateData();
-//   if (catalogUpdate.status === 200) {
-//     const end = new Date().getTime();
-//     log.info("Daily update products log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
-//       time: `Execution time: ${end - start}ms`,
-//     });
-//   } else {
-//     log.error("Daily update products data error: ", catalogUpdate.error);
-//   }
-// });
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Hourly update products data");
+  let catalogUpdate = await updateData();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Hourly update products data log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Hourly update products data error: ", catalogUpdate.error);
+  }
+});
 
 //Обновление данных по категориям
 schedule.scheduleJob({ hour: 1 }, async () => {
@@ -108,52 +109,69 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 });
 
 //Обновление данных по товарам kaspi
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('*/30 * * * *', async () => {
   const start = new Date().getTime();
-  log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update data kaspi");
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Half-hourly update data kaspi");
   let catalogUpdate = await updateDataFromXMLKaspi();
   if (catalogUpdate.status === 200) {
     const end = new Date().getTime();
-    log.info("Daily update products kaspi log ", {
+    log.info("Half-hourly update products kaspi log ", {
       created: catalogUpdate.created,
       updated: catalogUpdate.updated,
       time: `Execution time: ${end - start}ms`,
     });
   } else {
-    log.error("Daily update products kaspi data error: ", catalogUpdate.error);
+    log.error("Half-hourly update products kaspi data error: ", catalogUpdate.error);
   }
 });
 
 // //Обновление данных по ценам товара
-// schedule.scheduleJob('*/30 * * * *', async () => {
-//   const start = new Date().getTime();
-//   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update costs");
-//   let catalogUpdate = await updateCosts();
-//   if (catalogUpdate.status === 200) {
-//     const end = new Date().getTime();
-//     log.info("Daily update costs log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
-//       time: `Execution time: ${end - start}ms`,
-//     });
-//   } else {
-//     log.error("Daily update costs data error: ", catalogUpdate.error);
-//   }
-// });
+schedule.scheduleJob('*/30 * * * *', async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update costs");
+  let catalogUpdate = await updateCosts();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Daily update costs log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update costs data error: ", catalogUpdate.error);
+  }
+});
 
 // //Обновление данных по стокам товара
-// schedule.scheduleJob('15,45 * * * *', async () => {
-//   const start = new Date().getTime();
-//   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update stocks");
-//   let catalogUpdate = await updateStocks();
-//   if (catalogUpdate.status === 200) {
-//     const end = new Date().getTime();
-//     log.info("Daily update stocks log ", {
-//       created: catalogUpdate.created,
-//       updated: catalogUpdate.updated,
-//       time: `Execution time: ${end - start}ms`,
-//     });
-//   } else {
-//     log.error("Daily update stocks data error: ", catalogUpdate.error);
-//   }
-// });
+schedule.scheduleJob('*/30 * * * *', async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update stocks");
+  let catalogUpdate = await updateStocks();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Daily update stocks log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update stocks data error: ", catalogUpdate.error);
+  }
+});
+
+// //Обновление данных в Ozon по товарам
+schedule.scheduleJob({ hour: 1 }, async () => {
+  const start = new Date().getTime();
+  log.info(moment().format("HH:mm DD-MM-YYYY "), "Half-hourly update Ozon");
+  let catalogUpdate = await updateStockCostOzon();
+  if (catalogUpdate.status === 200) {
+    const end = new Date().getTime();
+    log.info("Half-hourly  update Ozon log ", {
+      created: catalogUpdate.created,
+      updated: catalogUpdate.updated,
+      time: `Execution time: ${end - start}ms`,
+    });
+  } else {
+    log.error("Daily update Ozon error: ", catalogUpdate.error);
+  }
+});

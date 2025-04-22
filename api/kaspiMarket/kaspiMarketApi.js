@@ -1,4 +1,5 @@
 const { default: axios } = require("axios");
+const axiosRetry = require("axios-retry").default;
 const { XMLParser } = require("fast-xml-parser");
 const {
   getAllFromCollection,
@@ -6,19 +7,21 @@ const {
   insertManyData,
   updateOne,
 } = require("../../database/mongoDb/mongoQuerie");
-
-//add logger
-const SimpleNodeLogger = require("simple-node-logger");
 const moment = require("moment");
-opts = {
-  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-HalykAPI.log`,
-  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
-};
-const log = SimpleNodeLogger.createSimpleLogger(opts);
+const { getAllProduct, updateCostsProduct } = require("../ozonMarket/ozonMarketApi");
+
+axios.defaults.timeout = 10000; // Set a 10-second timeout for requests
+
+axiosRetry(axios, {
+  retries: 3, // Retry up to 3 times
+  retryDelay: (retryCount) => retryCount * 1000, // Wait 1 second between retries
+  retryCondition: (error) => {
+    return error.code === "ECONNRESET" || axiosRetry.isNetworkError(error);
+  },
+});
 
 async function updateDataFromXMLKaspi() {
   try {
-    //parse from xml
     let externalURL =
       process.env.KASPI_XML_DATA_URL ||
       "https://export.evrika.com/api/exchange/evrika/kaspi/xml";
@@ -26,9 +29,10 @@ async function updateDataFromXMLKaspi() {
     let password = process.env.KASPI_XML_DATA_PASS || "";
     let XMLdata;
     let jObj = {};
+
     await axios(externalURL, {
       headers: {
-        "Accept-Encoding": "*",  // Allow any type of encoding
+        "Accept-Encoding": "*", // Allow any type of encoding
       },
       auth: {
         username: username,
@@ -46,9 +50,10 @@ async function updateDataFromXMLKaspi() {
         jObj = parser.parse(XMLdata);
       })
       .catch((err) => {
-        console.error("[AXIOS]", err.message);
-        return { error: err, status: 500 };
+        console.error("[AXIOS ERROR]", err.message);
+        throw new Error("Failed to fetch Kaspi XML data: " + err.message);
       });
+
     let products = jObj.kaspi_catalog.offers.offer;
 
     //get all ids from database
@@ -107,6 +112,7 @@ async function updateDataFromXMLKaspi() {
       } else {
         element.created = timeUpdate;
         element.updated = timeUpdate;
+        element.available = true;
         createData.push(element);
       }
     }
@@ -116,19 +122,20 @@ async function updateDataFromXMLKaspi() {
     missingIDs.map(async (e) => {
       await updateOne(
         "kaspi_market",
-        { $set: { available: false, updated: timeUpdate } },
+        { $set: { available: false, updated: timeUpdate, locations: [] } },
         { _id: parseInt(e) }
       );
       updatedCount += 1;
     });
+
     let resultCreate = 0;
     if (createData.length !== 0) {
       resultCreate = await insertManyData("kaspi_market", createData);
     }
     return { status: 200, created: resultCreate, updated: updatedCount };
   } catch (err) {
-    console.error(err);
-    return { status: 500, error: err };
+    console.error("Half-hourly update products kaspi data error:", err.message);
+    return { status: 500, error: err.message };
   }
 }
 
