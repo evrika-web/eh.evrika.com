@@ -32,6 +32,7 @@ const {
   connectDb
 } = require("./database/mongoDb/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
+const { updateStocks, updateBranches, updateCities, updateCategories } = require("./api/catalog/catalogApi");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-main.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
@@ -224,6 +225,11 @@ app.use(express.urlencoded({ extended: true }));
 
 //Подключение запросов по файловой системе FS
 app.use("/files", fileSystemFSRouter);
+
+// app.get("/test", async (req, res) => {
+//   const result = await updateCategories();
+//   res.json(result);
+// });
 
 //Определение порта и хоста для сервера
 app.listen(port, host, async () => {

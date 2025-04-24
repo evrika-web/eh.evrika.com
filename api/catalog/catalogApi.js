@@ -9,6 +9,8 @@ const {
 } = require("../../database/mongoDb/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
 const moment = require("moment");
+const path = require("path");
+const fs = require("fs");
 
 async function updateData() {
   try {
@@ -195,7 +197,7 @@ async function updateData() {
 async function updateCategories() {
   try {
     let dataFetched;
-    dataFetched = await dataFetching("/categories?locale=ru", false);
+    dataFetched = await dataFetching("/categories", false);
     let data = dataFetched.data.categories;
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
@@ -256,20 +258,19 @@ async function updateBranches() {
     if (dataFetched.status === 200) {
       if (Array.isArray(data) && data.length !== 0) {
         const updatedData = await updateFullCollection("branches", data);
-        console.log("🚀 ~ updateBranches ~ updatedData:", updatedData)
         if (updatedData.statusResponse === "success") {
           return { status: 200, message: updatedData.message };
         } else {
           throw new Error(
             "Error in transaction update data: ",
-            updatedData.error
+            updatedData
           );
         }
       } else {
         throw new Error("No branches received from the server");
       }
     } else {
-      throw new Error(`Server responded ${dataFetched}`);
+      throw new Error(`Server responded ${JSON.stringify(dataFetched)}`);
     }
   } catch (err) {
     console.error(err);
@@ -330,6 +331,7 @@ async function updateStocks() {
       })
     );
     let data = dataFetched.data;
+    
     // const stocksFilePath = path.join(__dirname, "../../data/stocks.json");
     // const rawData = fs.readFileSync(stocksFilePath, "utf8");
     // let data = JSON.parse(rawData.trim());

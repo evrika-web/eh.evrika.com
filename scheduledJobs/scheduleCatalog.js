@@ -73,23 +73,23 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 });
 
 //Обновление данных по городам
-schedule.scheduleJob({ hour: 1 }, async () => {
-  const start = new Date().getTime();
-  log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update branches");
-  let catalogUpdate = await updateBranches();
-  if (catalogUpdate.status === 200)
-  {
-    const end = new Date().getTime();
-    log.info("Daily update branches log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
-      time: `Execution time: ${end - start}ms`,
-    });
-  }
-  else {
-    log.error("Daily update branches data error: ", catalogUpdate.error);
-  }
-});
+// schedule.scheduleJob({ hour: 1 }, async () => {
+//   const start = new Date().getTime();
+//   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update branches");
+//   let catalogUpdate = await updateBranches();
+//   if (catalogUpdate.status === 200)
+//   {
+//     const end = new Date().getTime();
+//     log.info("Daily update branches log ", {
+//       created: catalogUpdate.created,
+//       updated: catalogUpdate.updated,
+//       time: `Execution time: ${end - start}ms`,
+//     });
+//   }
+//   else {
+//     log.error("Daily update branches data error: ", catalogUpdate.error);
+//   }
+// });
 
 //Обновление данных по товарам halyk
 schedule.scheduleJob({ hour: 1 }, async () => {

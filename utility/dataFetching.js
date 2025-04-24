@@ -21,7 +21,7 @@ async function dataFetching(url, customURL, configURL) {
           "Accept-Encoding": "*",
         },
       };
-      backendUrl += url;
+      backendUrl += url + '?locale=ru&channel=web';
     } else {
       backendUrl = url;
       config = configURL;
