@@ -79,7 +79,7 @@ async function updateStocksProduct({ data }) {
 async function getDataFromWebsite({ vendorCode }) {
   try {
     const response = await dataFetching(
-      `/products/available/city/1/vendorcode/${vendorCode}?locale=ru&channel=web`,
+      `/products/available/city/1/vendorcode/${vendorCode}`,
       false
     );
     if (response.status === 200) {
