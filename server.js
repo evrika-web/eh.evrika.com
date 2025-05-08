@@ -33,6 +33,7 @@ const {
 } = require("./database/mongoDb/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
 const { updateStocks, updateBranches, updateCities, updateCategories } = require("./api/catalog/catalogApi");
+const { updateStockCostOzon } = require("./api/ozonMarket/ozonMarketApi");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-main.log`,
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
@@ -230,6 +231,11 @@ app.use("/files", fileSystemFSRouter);
 //   const result = await updateCategories();
 //   res.json(result);
 // });
+
+app.get("/ozon-update", async (req, res) => {
+  const result = await updateStockCostOzon();
+  res.json(result);
+});
 
 //Определение порта и хоста для сервера
 app.listen(port, host, async () => {

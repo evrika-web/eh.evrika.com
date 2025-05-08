@@ -24,8 +24,23 @@ async function getAllProduct() {
     limit: 1000,
   };
   try {
-    const products = await axios(ozonURL + "/v3/product/list", configURL);
-    return products.data.result.items;
+    let allProducts = [];
+    let hasMore = true;
+    configURL.data.last_id = "";
+
+    while (hasMore) {
+      const products = await axios(ozonURL + "/v3/product/list", configURL);
+      const items = products.data.result.items;
+      allProducts = allProducts.concat(items);
+
+      if (items.length < 1000) {
+        hasMore = false;
+      } else {
+        configURL.data.last_id = products.data.result.last_id;
+      }
+    }
+
+    return allProducts;
   } catch (error) {
     console.error("Error fetching products from Ozon API:", error.message);
     throw error;
@@ -33,23 +48,40 @@ async function getAllProduct() {
 }
 
 async function getAllProductsInfo(data) {
-  configURL.data = data;
-  try {
-    const products = await axios(ozonURL + "/v3/product/info/list", configURL);
-    return products.data.items;
-  } catch (error) {
-    console.error("Error fetching products from Ozon API:", error.message);
-    throw error;
+  const chunkSize = 1000;
+  const chunks = [];
+  for (let i = 0; i < data.length; i += chunkSize) {
+    chunks.push(data.slice(i, i + chunkSize));
   }
+
+  const allProductsInfo = [];
+  for (const chunk of chunks) {
+    configURL.data = { offer_id: chunk };
+    const products = await axios(ozonURL + "/v3/product/info/list", configURL);
+    allProductsInfo.push(...products.data.items);
+  }
+
+  return allProductsInfo;
 }
 async function updateCostsProduct({ data }) {
   try {
-    const products = await axios.post(
-      ozonURL + "/v1/product/import/prices",
-      data,
-      configURL
-    );
-    return products.status;
+    const chunkSize = 100;
+    const prices = data.prices;
+    let responses = [];
+
+    for (let i = 0; i < prices.length; i += chunkSize) {
+      const chunk = prices.slice(i, i + chunkSize);
+      const chunkData = { prices: chunk };
+
+      const response = await axios.post(
+        ozonURL + "/v1/product/import/prices",
+        chunkData,
+        configURL
+      );
+      responses.push(response.status);
+    }
+
+    return responses;
   } catch (error) {
     console.error(
       "Error fetching update costs of products from Ozon API:",
@@ -61,12 +93,23 @@ async function updateCostsProduct({ data }) {
 
 async function updateStocksProduct({ data }) {
   try {
-    const products = await axios.post(
-      ozonURL + "/v2/products/stocks",
-      data,
-      configURL
-    );
-    return products.status;
+    const chunkSize = 100;
+    const stocks = data.stocks;
+    let responses = [];
+
+    for (let i = 0; i < stocks.length; i += chunkSize) {
+      const chunk = stocks.slice(i, i + chunkSize);
+      const chunkData = { stocks: chunk };
+
+      const response = await axios.post(
+        ozonURL + "/v2/products/stocks",
+        chunkData,
+        configURL
+      );
+      responses.push(response.status);
+    }
+
+    return responses;
   } catch (error) {
     console.error(
       "Error fetching update stocks of products from Ozon API:",
@@ -110,8 +153,10 @@ async function getDataFromWebsite({ vendorCode }) {
 
 async function updateStockCostOzon() {
   const allProducts = await getAllProduct();
+
   const offerIds = allProducts.map((product) => product.offer_id);
   const allProductsInfo = await getAllProductsInfo({ offer_id: offerIds });
+
   const mergedProducts = allProducts.map((product) => {
     const productInfo = allProductsInfo.find(
       (info) => info.offer_id === product.offer_id
@@ -135,7 +180,6 @@ async function updateStockCostOzon() {
       product.websiteData = null; // Устанавливаем null, если произошла ошибка
     }
   }
-
   const ozonPriceData = allProducts.map((item) => {
     return {
       auto_action_enabled: "DISABLED",
@@ -143,8 +187,8 @@ async function updateStockCostOzon() {
       offer_id: item.offer_id,
       price: item.websiteData ? item.websiteData.price.toString() || "0" : "0",
       old_price: item.websiteData
-        ? item.websiteData.oldPrice.toString() || "0"
-        : "0",
+      ? item.websiteData.oldPrice.toString() || "0"
+      : "0",
       price_strategy_enabled: "DISABLED",
       product_id: item.product_id,
       quant_size: 1,
@@ -164,6 +208,7 @@ async function updateStockCostOzon() {
       warehouse_id: warehouse_id,
     };
   });
+  
   var responseCosts = null;
   var responseStocks = null;
   try {
