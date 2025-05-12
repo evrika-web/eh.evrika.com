@@ -22,7 +22,7 @@ opts = {
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 //Обновление данных по товарам
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('0 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY "), "Hourly update products data");
   let catalogUpdate = await updateData();
@@ -39,7 +39,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 });
 
 //Обновление данных по категориям
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('0 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update categories");
   let catalogUpdate = await updateCategories();
@@ -56,7 +56,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 });
 
 //Обновление данных по городам
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('0 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY"), "Daily update cities");
   let catalogUpdate = await updateCities();
@@ -73,7 +73,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 });
 
 //Обновление данных по городам
-// schedule.scheduleJob({ hour: 1 }, async () => {
+// schedule.scheduleJob('0 * * * *', async () => {
 //   const start = new Date().getTime();
 //   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update branches");
 //   let catalogUpdate = await updateBranches();
@@ -92,7 +92,7 @@ schedule.scheduleJob({ hour: 1 }, async () => {
 // });
 
 //Обновление данных по товарам halyk
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('0 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY "), "Daily update data halyk");
   let catalogUpdate = await updateDataFromXML();
@@ -160,7 +160,7 @@ schedule.scheduleJob('*/30 * * * *', async () => {
 });
 
 // //Обновление данных в Ozon по товарам
-schedule.scheduleJob({ hour: 1 }, async () => {
+schedule.scheduleJob('0 * * * *', async () => {
   const start = new Date().getTime();
   log.info(moment().format("HH:mm DD-MM-YYYY "), "Half-hourly update Ozon");
   let catalogUpdate = await updateStockCostOzon();

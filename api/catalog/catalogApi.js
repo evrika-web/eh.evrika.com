@@ -9,8 +9,6 @@ const {
 } = require("../../database/mongoDb/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
 const moment = require("moment");
-const path = require("path");
-const fs = require("fs");
 
 async function updateData() {
   try {
