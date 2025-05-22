@@ -120,34 +120,45 @@ async function updateStocksProduct({ data }) {
 }
 
 async function getDataFromWebsite({ vendorCode }) {
-  try {
-    const response = await dataFetching(
-      `/products/available/city/1/vendorcode/${vendorCode}`,
-      false
-    );
-    if (response.status === 200) {
-      var stock = response.data.branches
-        .filter(
-          (branch) => branch.guid === "4318444d-c0be-11e1-9c78-001e670c9281"
-        )
-        .reduce(
-          (acc, branch) =>
-            acc + ((branch.quality && branch.quality["Новый"]) || 0),
-          0
-        );
+  const maxRetries = 3;
+  let attempt = 0;
 
-      const data = {
-        stock: stock,
-        price: response.data.cost,
-        oldPrice: response.data.old_cost,
-      };
-      return data;
-    } else {
-      throw new Error("Failed to fetch data from website");
+  while (attempt < maxRetries) {
+    try {
+      const response = await dataFetching(
+        `/products/available/city/1/vendorcode/${vendorCode}`,
+        false
+      );
+      if (response.status === 200) {
+        var stock = response.data.branches
+          .filter(
+            (branch) => branch.guid === "4318444d-c0be-11e1-9c78-001e670c9281"
+          )
+          .reduce(
+            (acc, branch) =>
+              acc + ((branch.quality && branch.quality["Новый"]) || 0),
+            0
+          );
+
+        const data = {
+          stock: stock,
+          price: response.data.cost,
+          oldPrice: response.data.old_cost,
+        };
+        return data;
+      } else {
+        throw new Error("Failed to fetch data from website");
+      }
+    } catch (error) {
+      attempt++;
+      console.error(
+        `Attempt ${attempt} - Error fetching data from website:`,
+        error.message
+      );
+      if (attempt >= maxRetries) {
+        throw error;
+      }
     }
-  } catch (error) {
-    console.error("Error fetching data from website:", error.message);
-    throw error;
   }
 }
 
