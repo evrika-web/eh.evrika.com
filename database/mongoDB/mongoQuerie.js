@@ -261,51 +261,42 @@ function downloadFile(fileId, destinationStream, options = {}) {
 
 async function updateFullCollection(collectionName, data) {
   let responseMessage = '';
-  const session = client.startSession(); // Start a new session
+  const session = client.startSession();
   try {
     const oldCollection = db.collection(collectionName);
     const newCollection = db.collection(`${collectionName}_new`);
 
-    session.startTransaction(); // Start the transaction
+    session.startTransaction();
     let filteredData = data;
 
+    // Фильтрация только для stocks
     if (collectionName === "stocks") {
-      // Filter data for stocks
       filteredData = data.filter(
         (item) => item.branch_guid && item.product_guid
       );
     }
 
-    if (filteredData.length > 0) {
-      await newCollection.insertMany(filteredData, { session });
-      console.log(
-        `Inserted ${filteredData.length} documents into the new collection.`
-      );
-      responseMessage = `Inserted ${filteredData.length} documents into the new collection.`;
-    } else {
-      console.log("No valid data to insert into the new collection.");
+    if (!Array.isArray(filteredData) || filteredData.length === 0) {
       return {
         statusResponse: "error",
         error: "No valid data to insert into the new collection.",
       };
     }
 
-    await session.commitTransaction(); // Commit the transaction
-    console.log("Transaction committed.");
+    await newCollection.insertMany(filteredData, { session });
+    responseMessage = `Inserted ${filteredData.length} documents into the new collection.`;
 
-    // Perform drop and rename operations outside the transaction
+    await session.commitTransaction();
+
+    // Drop и rename вне транзакции (MongoDB не поддерживает эти операции в транзакции)
     await oldCollection.drop();
-    console.log("Old collection dropped.");
-
     await newCollection.rename(collectionName);
-    console.log(`New collection renamed to ${collectionName}.`);
 
+    // Индексы только после переименования
     if (collectionName === "stocks") {
-      await newCollection.createIndex({ branch_guid: 1, product_guid: 1 });
-      console.log("Index created for stocks collection.");
+      await db.collection(collectionName).createIndex({ branch_guid: 1, product_guid: 1 });
     } else if (collectionName === "costs") {
-      await newCollection.createIndex({ product: 1, product_code: 1 });
-      console.log("Index created for costs collection.");
+      await db.collection(collectionName).createIndex({ product: 1, product_code: 1 });
     }
 
     return { statusResponse: "success", message: responseMessage };
@@ -313,8 +304,7 @@ async function updateFullCollection(collectionName, data) {
     console.error("Error during transaction:", error);
     try {
       if (session.inTransaction()) {
-        await session.abortTransaction(); // Abort the transaction only if it's active
-        console.log("Transaction aborted.");
+        await session.abortTransaction();
       }
     } catch (abortError) {
       console.error("Error aborting transaction:", abortError);
@@ -324,7 +314,7 @@ async function updateFullCollection(collectionName, data) {
       error: error.message,
     };
   } finally {
-    session.endSession(); // End the session
+    session.endSession();
   }
 }
 

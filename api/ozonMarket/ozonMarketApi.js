@@ -1,12 +1,8 @@
-const {
-  getAllFromCollection,
-  replaceOne,
-  insertManyData,
-  updateOne,
-} = require("../../database/mongoDb/mongoQuerie");
 const moment = require("moment");
 const { dataFetching } = require("../../utility/dataFetching");
 const { default: axios } = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const configURL = {
   headers: {
@@ -16,6 +12,14 @@ const configURL = {
   method: "POST",
 };
 const ozonURL = process.env.OZON_API_URL || "https://api-seller.ozon.ru";
+
+//add logger
+const SimpleNodeLogger = require("simple-node-logger");
+const opts = {
+  logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-ozon-api.log`,
+  timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
+};
+const log = SimpleNodeLogger.createSimpleLogger(opts);
 
 async function getAllProduct() {
   configURL.data = {
@@ -47,11 +51,11 @@ async function getAllProduct() {
   }
 }
 
-async function getAllProductsInfo(data) {
+async function getAllProductsInfo({ offer_id }) {
   const chunkSize = 1000;
   const chunks = [];
-  for (let i = 0; i < data.length; i += chunkSize) {
-    chunks.push(data.slice(i, i + chunkSize));
+  for (let i = 0; i < offer_id.length; i += chunkSize) {
+    chunks.push(offer_id.slice(i, i + chunkSize));
   }
 
   const allProductsInfo = [];
@@ -63,9 +67,10 @@ async function getAllProductsInfo(data) {
 
   return allProductsInfo;
 }
+
 async function updateCostsProduct({ data }) {
   try {
-    const chunkSize = 100;
+    const chunkSize = 99;
     const prices = data.prices;
     let responses = [];
 
@@ -78,8 +83,36 @@ async function updateCostsProduct({ data }) {
         chunkData,
         configURL
       );
-      responses.push(response.status);
+
+      // Check for update errors in response
+      if (response.data && Array.isArray(response.data.result)) {
+        response.data.result.forEach((item) => {
+          if (item.updated === false && Array.isArray(item.errors)) {
+            item.errors.forEach((err) => {
+              log.error(
+                "In updating costs ",
+                item.offer_id,
+                " - ",
+                err.message
+              );
+            });
+          }
+        });
+      }
+
+      responses.push(response.data);
     }
+
+    // Save all responses to a single file after the loop
+    const now = moment();
+    const dateFolder = now.format("DD-MM-YYYY");
+    const timeStamp = now.format("HH-mm-ss-SSS");
+    const logDir = path.join("logs", "ozon", dateFolder, "costs");
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const filePath = path.join(logDir, `costs-${timeStamp}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(responses, null, 2));
 
     return responses;
   } catch (error) {
@@ -93,7 +126,7 @@ async function updateCostsProduct({ data }) {
 
 async function updateStocksProduct({ data }) {
   try {
-    const chunkSize = 100;
+    const chunkSize = 99;
     const stocks = data.stocks;
     let responses = [];
 
@@ -106,8 +139,36 @@ async function updateStocksProduct({ data }) {
         chunkData,
         configURL
       );
-      responses.push(response.status);
+
+      // Check for update errors in response
+      if (response.data && Array.isArray(response.data.result)) {
+        response.data.result.forEach((item) => {
+          if (item.updated === false && Array.isArray(item.errors)) {
+            item.errors.forEach((err) => {
+              log.error(
+                "In updating stock ",
+                item.offer_id,
+                " - ",
+                err.message
+              );
+            });
+          }
+        });
+      }
+
+      responses.push(response.data);
     }
+
+    // Save all responses to a single file after the loop
+    const now = moment();
+    const dateFolder = now.format("DD-MM-YYYY");
+    const timeStamp = now.format("HH-mm-ss-SSS");
+    const logDir = path.join("logs", "ozon", dateFolder, "stocks");
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const filePath = path.join(logDir, `stocks-${timeStamp}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(responses, null, 2));
 
     return responses;
   } catch (error) {
@@ -120,8 +181,9 @@ async function updateStocksProduct({ data }) {
 }
 
 async function getDataFromWebsite({ vendorCode }) {
-  const maxRetries = 3;
+  const maxRetries = 5;
   let attempt = 0;
+  let delay = 1000; // Start with 1 second
 
   while (attempt < maxRetries) {
     try {
@@ -146,102 +208,142 @@ async function getDataFromWebsite({ vendorCode }) {
           oldPrice: response.data.old_cost,
         };
         return data;
+      } else if (response.status === 429) {
+        attempt++;
+        console.warn(
+          `Attempt ${attempt} - Received 429 Too Many Requests. Retrying after ${delay}ms...`
+        );
+        await new Promise((res) => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
       } else {
         throw new Error("Failed to fetch data from website");
       }
     } catch (error) {
-      attempt++;
-      console.error(
-        `Attempt ${attempt} - Error fetching data from website:`,
-        error.message
-      );
-      if (attempt >= maxRetries) {
-        throw error;
+      if (error.response && error.response.status === 429) {
+        attempt++;
+        console.warn(
+          `Attempt ${attempt} - Received 429 Too Many Requests. Retrying after ${delay}ms...`
+        );
+        await new Promise((res) => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        attempt++;
+        console.error(
+          `Attempt ${attempt} - Error fetching data from website:`,
+          error.message
+        );
+        if (attempt >= maxRetries) {
+          throw error;
+        }
       }
     }
   }
+  throw new Error("Max retries reached for getDataFromWebsite");
 }
 
 async function updateStockCostOzon() {
-  const allProducts = await getAllProduct();
+  // Dynamically import p-limit for ESM compatibility
+  const pLimit = (await import("p-limit")).default;
 
-  const offerIds = allProducts.map((product) => product.offer_id);
-  const allProductsInfo = await getAllProductsInfo({ offer_id: offerIds });
+  try {
+    const allProducts = await getAllProduct();
+    const offerIds = allProducts.map((product) => product.offer_id);
+    const allProductsInfo = await getAllProductsInfo({ offer_id: offerIds });
 
-  const mergedProducts = allProducts.map((product) => {
-    const productInfo = allProductsInfo.find(
-      (info) => info.offer_id === product.offer_id
-    );
-    return { ...product, ...productInfo };
-  });
-  allProducts.length = 0;
-  allProducts.push(...mergedProducts);
-
-  for (const product of allProducts) {
-    try {
-      const websiteData = await getDataFromWebsite({
-        vendorCode: product.offer_id,
-      });
-      product.websiteData = websiteData; // Сохраняем данные в объекте
-    } catch (error) {
-      console.error(
-        `Error fetching website data for product ${product.offer_id}:`,
-        error.message
+    // Merge product info
+    const mergedProducts = allProducts.map((product) => {
+      const productInfo = allProductsInfo.find(
+        (info) => info.offer_id === product.offer_id
       );
-      product.websiteData = null; // Устанавливаем null, если произошла ошибка
-    }
-  }
-  const ozonPriceData = allProducts.map((item) => {
-    return {
+      return { ...product, ...productInfo };
+    });
+
+    // Limit concurrency for website requests
+    const limit = pLimit(3); // Set concurrency limit (try 3, adjust as needed)
+    await Promise.all(
+      mergedProducts.map((product) =>
+        limit(async () => {
+          try {
+            const websiteData = await getDataFromWebsite({
+              vendorCode: product.offer_id,
+            });
+            product.websiteData = websiteData;
+          } catch (error) {
+            console.error(
+              `Error fetching website data for product ${product.offer_id}:`,
+              error.message
+            );
+            product.websiteData = null;
+          }
+        })
+      )
+    );
+
+    const ozonPriceData = mergedProducts.map((item) => ({
       auto_action_enabled: "DISABLED",
       currency_code: "KZT",
       offer_id: item.offer_id,
-      price: item.websiteData ? item.websiteData.price.toString() || "0" : "0",
+      price: item.websiteData ? item.websiteData.price?.toString() || "0" : "0",
       old_price: item.websiteData
-      ? item.websiteData.oldPrice.toString() || "0"
+      ? item.websiteData.price &&
+        item.websiteData.oldPrice &&
+        item.websiteData.oldPrice <= item.websiteData.price
+        ? "0"
+        : (
+        (item.websiteData.price < 49000 &&
+          Math.abs(item.websiteData.price - item.websiteData.oldPrice) /
+          item.websiteData.price > 0.05) ||
+        (item.websiteData.price >= 49000 &&
+          Math.abs(item.websiteData.price - item.websiteData.oldPrice) >
+          3000)
+        )
+        ? item.websiteData.oldPrice?.toString() || "0"
+        : "0"
       : "0",
       price_strategy_enabled: "DISABLED",
       product_id: item.product_id,
       quant_size: 1,
       vat: "0",
-    };
-  });
-  const ozonStockData = allProducts.map((item) => {
-    var warehouse_id = 1020005000165063;
-    if (item.is_kgt) {
-      warehouse_id = 1020005000166135;
-    }
-    return {
+    }));
+
+    const ozonStockData = mergedProducts.map((item) => ({
       offer_id: item.offer_id,
       product_id: item.product_id,
       quant_size: 1,
       stock: item.websiteData ? item.websiteData.stock || 0 : 0,
-      warehouse_id: warehouse_id,
+      warehouse_id: item.is_kgt ? 1020005000166135 : 1020005000165063,
+    }));
+
+    let responseCosts = null;
+    let responseStocks = null;
+    try {
+      responseCosts = await updateCostsProduct({
+        data: { prices: ozonPriceData },
+      });
+    } catch (error) {
+      console.error("Error updating costs:", error.message);
+    }
+    try {
+      responseStocks = await updateStocksProduct({
+        data: { stocks: ozonStockData },
+      });
+    } catch (error) {
+      console.error("Error updating stocks:", error.message);
+    }
+    return {
+      status: 200,
+      responseCosts: responseCosts,
+      responseStocks: responseStocks,
     };
-  });
-  
-  var responseCosts = null;
-  var responseStocks = null;
-  try {
-    responseCosts = await updateCostsProduct({
-      data: { prices: ozonPriceData },
-    });
   } catch (error) {
-    console.error("Error updating costs:", error.message);
+    console.error("Error in updateStockCostOzon:", error.message);
+    return {
+      status: 500,
+      error: error.message,
+    };
   }
-  try {
-    responseStocks = await updateStocksProduct({
-      data: { stocks: ozonStockData },
-    });
-  } catch (error) {
-    console.error("Error updating stocks:", error.message);
-  }
-  return {
-    status: 200,
-    responseCosts: responseCosts,
-    responseStocks: responseStocks,
-  };
 }
+
 module.exports = {
   getAllProduct,
   updateCostsProduct,
