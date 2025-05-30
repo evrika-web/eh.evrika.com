@@ -3,7 +3,7 @@ const router = express.Router();
 const moment = require("moment");
 require("dotenv").config();
 const SimpleNodeLogger = require("simple-node-logger");
-const { getOneFromCollectionByFilter } = require("../database/mongoDb/mongoQuerie");
+const { getOneFromCollectionByFilter } = require("../database/mongoDB/mongoQuerie");
 const {} = require("../api/catalog/catalogApi");
 const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
 

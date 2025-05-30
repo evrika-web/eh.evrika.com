@@ -6,7 +6,7 @@ const {
   insertManyData,
   updateOne,
   updateFullCollection,
-} = require("../../database/mongoDb/mongoQuerie");
+} = require("../../database/mongoDB/mongoQuerie");
 const { dataFetching } = require("../../utility/dataFetching");
 const moment = require("moment");
 

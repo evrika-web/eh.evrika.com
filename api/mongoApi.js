@@ -1,5 +1,5 @@
 const express = require("express");
-const { getHiddenFieldsObject } = require("../database/mongoDb/mongoFilter");
+const { getHiddenFieldsObject } = require("../database/mongoDB/mongoFilter");
 const {
   getAllFromCollection,
   deleteOne,
@@ -7,7 +7,7 @@ const {
   updateOne,
   insertOneData,
   getOneFromCollectionByFilter,
-} = require("../database/mongoDb/mongoQuerie");
+} = require("../database/mongoDB/mongoQuerie");
 const { authenticateToken } = require("../utility/authorization");
 const moment = require("moment");
 

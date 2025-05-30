@@ -30,7 +30,7 @@ const jwt = require('jsonwebtoken');
 const SimpleNodeLogger = require("simple-node-logger");
 const {
   connectDb
-} = require("./database/mongoDb/mongoQuerie");
+} = require("./database/mongoDB/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
 const { updateStocks, updateBranches, updateCities, updateCategories } = require("./api/catalog/catalogApi");
 const { updateStockCostOzon } = require("./api/ozonMarket/ozonMarketApi");

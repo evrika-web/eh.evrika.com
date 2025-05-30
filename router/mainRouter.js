@@ -1,4 +1,4 @@
-const { getObjectId } = require("../database/mongoDb/mongoQuerie");
+const { getObjectId } = require("../database/mongoDB/mongoQuerie");
 const getMongoApiRouter = require("../api/mongoApi");
 const { maskPhone } = require("../utility/routerHelper/helpers");
 const moment = require("moment");
