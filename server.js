@@ -18,6 +18,7 @@ const port = process.env.PORT;
 const host = process.env.HOST;
 const dbName = process.env.MONGO_DB_NAME || "search-system";
 const url = process.env.MONGO_URL || "mongodb://localhost:27017";
+const dbFullUrl = process.env.MONGODB_URI || "mongodb://localhost:27017/search-system";
 require("./scheduledJobs/scheduleCatalog");
 require("./scheduledJobs/scheduleLogFiles");
 require("dotenv").config();
@@ -26,13 +27,15 @@ const serverLog = getAppLog("Express");
 const mongoLog = getAppLog("MongoDB");
 const jwt = require('jsonwebtoken');
 
+const mongoose = require('mongoose');
+mongoose.connect(dbFullUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+
 //Добавление логирования ошибок и запросов
 const SimpleNodeLogger = require("simple-node-logger");
 const {
   connectDb
 } = require("./database/mongoDB/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
-const { updateStocks, updateBranches, updateCities, updateCategories } = require("./api/catalog/catalogApi");
 const { updateStockCostOzon } = require("./api/ozonMarket/ozonMarketApi");
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-main.log`,
@@ -40,9 +43,54 @@ opts = {
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
 
-//ограничение в файлах json до 100МБ
-app.use(express.json({ limit: "100mb" }));
+(async () => {
+  const AdminJS = (await import('adminjs')).default;
+  const AdminJSExpress = (await import('@adminjs/express')).default;
+  const AdminJSMongoose = await import('@adminjs/mongoose'); // <--- без .default
 
+  AdminJS.registerAdapter({
+    Resource: AdminJSMongoose.Resource,
+    Database: AdminJSMongoose.Database,
+  });
+
+  const City = mongoose.model('cities', new mongoose.Schema({}, { strict: false }));
+  const Product = mongoose.model('products', new mongoose.Schema({}, { strict: false }));
+  const Branch = mongoose.model('branches', new mongoose.Schema({}, { strict: false }));
+
+  const adminJs = new AdminJS({
+    resources: [City, Product, Branch],
+    rootPath: '/admin',
+    branding: {
+      companyName: 'Evrika Admin',
+    },
+  });
+  
+  adminJs.watch()
+
+  const ADMIN = {
+    email: process.env.AUTH_LOGIN || 'admin',
+    password: process.env.AUTH_PASSWORD || 'x1z-uuyoT$lul2N*',
+  };
+
+  const router = AdminJSExpress.buildAuthenticatedRouter(adminJs, {
+    authenticate: async (email, password) => {
+      if (email === ADMIN.email && password === ADMIN.password) {
+        return ADMIN;
+      }
+      return null;
+    },
+    cookieName: 'adminjs',
+    cookiePassword: process.env.ADMIN_COOKIE_SECRET || 'sessionsecret',
+  });
+
+
+  app.use(adminJs.options.rootPath, router);
+
+  //ограничение в файлах json до 100МБ
+  app.use(express.json({ limit: "100mb" }));
+  // Middleware для обработки данных формы
+  app.use(express.urlencoded({ extended: true }));
+  
 // const { useTreblle } = require('treblle')
 
 // useTreblle(app, {
@@ -221,9 +269,6 @@ app.use("/kaspi", kaspiMarketRouter);
 //Подключение запросов по файловой системе Mongo Binary
 app.use("/files-binary", fileSystemBinaryRouter);
 
-// Middleware для обработки данных формы
-app.use(express.urlencoded({ extended: true }));
-
 //Подключение запросов по файловой системе FS
 app.use("/files", fileSystemFSRouter);
 
@@ -251,3 +296,4 @@ app.listen(port, host, async () => {
     mongoLog("not connected", url);
   }
 });
+})();
