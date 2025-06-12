@@ -8,7 +8,7 @@ const {
   getAllFromCollection,
   getDistinct,
   getOneFromCollectionByFilter,
-} = require("../database/mongoDB/mongoQuerie");
+} = require("../database/mongo/mongoQuerie");
 const catalogMatching = require("../utility/dataMatching");
 const {
   updateData,

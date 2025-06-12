@@ -180,22 +180,20 @@ async function updateStocksProduct({ data }) {
   }
 }
 
-async function getDataFromWebsite({ vendorCode }) {
+async function getDataFromWebsite({ vendorCode, city, branchGuid }) {
   const maxRetries = 5;
   let attempt = 0;
-  let delay = 1000; // Start with 1 second
+  let delay = 1500; // Start with 1 second
 
   while (attempt < maxRetries) {
     try {
       const response = await dataFetching(
-        `/products/available/city/1/vendorcode/${vendorCode}`,
+        `/products/available/city/${city}/vendorcode/${vendorCode}`,
         false
       );
       if (response.status === 200) {
         var stock = response.data.branches
-          .filter(
-            (branch) => branch.guid === "4318444d-c0be-11e1-9c78-001e670c9281"
-          )
+          .filter((branch) => branch.guid === branchGuid)
           .reduce(
             (acc, branch) =>
               acc + ((branch.quality && branch.quality["Новый"]) || 0),
@@ -226,6 +224,11 @@ async function getDataFromWebsite({ vendorCode }) {
         );
         await new Promise((res) => setTimeout(res, delay));
         delay *= 2; // Exponential backoff
+      } else if (error.response && error.response.status === 404) {
+        console.error(
+          `Error 404 - Resource not found for vendorCode: ${vendorCode}, city: ${city}, branchGuid: ${branchGuid}`
+        );
+        throw new Error("Resource not found (404)");
       } else {
         attempt++;
         console.error(
@@ -241,16 +244,54 @@ async function getDataFromWebsite({ vendorCode }) {
   throw new Error("Max retries reached for getDataFromWebsite");
 }
 
+async function fetchWebsiteProductsData({ productArticles, branchGuids }) {
+  try {
+    const response = await dataFetching("/exchange/ozon/products-data", false, {
+      method: "POST",
+      data: {
+        productArticles,
+        branchGuids,
+        limit: 100,
+      },
+    });
+    // Если dataFetching возвращает { status, data }, то:
+    return response.data || [];
+  } catch (error) {
+    console.error(
+      "Error fetching products data from website API:",
+      error.message
+    );
+    return [];
+  }
+}
+
 async function updateStockCostOzon() {
-  // Dynamically import p-limit for ESM compatibility
   const pLimit = (await import("p-limit")).default;
+
+  // Конфигурация городов: branchGuid, warehouse_id, условие для is_kgt (если нужно)
+  const cityConfigs = [
+    {
+      name: "Алматы РЦ",
+      branchGuid: "4318444d-c0be-11e1-9c78-001e670c9281",
+      warehouse_id: (product) =>
+        product.is_kgt ? 1020005000166135 : 1020005000165063,
+      useKgt: true,
+    },
+    {
+      name: "Шымкент РЦ",
+      branchGuid: "5a585097-50d0-11e1-beb2-0027133dad0a",
+      warehouse_id: () => 1020005000192914,
+      useKgt: false,
+    },
+    // Добавляйте новые города по аналогии
+  ];
 
   try {
     const allProducts = await getAllProduct();
     const offerIds = allProducts.map((product) => product.offer_id);
     const allProductsInfo = await getAllProductsInfo({ offer_id: offerIds });
 
-    // Merge product info
+    // Объединяем данные о продуктах
     const mergedProducts = allProducts.map((product) => {
       const productInfo = allProductsInfo.find(
         (info) => info.offer_id === product.offer_id
@@ -258,62 +299,119 @@ async function updateStockCostOzon() {
       return { ...product, ...productInfo };
     });
 
-    // Limit concurrency for website requests
-    const limit = pLimit(3); // Set concurrency limit (try 3, adjust as needed)
-    await Promise.all(
-      mergedProducts.map((product) =>
-        limit(async () => {
-          try {
-            const websiteData = await getDataFromWebsite({
-              vendorCode: product.offer_id,
-            });
-            product.websiteData = websiteData;
-          } catch (error) {
-            console.error(
-              `Error fetching website data for product ${product.offer_id}:`,
-              error.message
-            );
-            product.websiteData = null;
-          }
+    // Получаем список branchGuid для запроса
+    const branchGuids = cityConfigs.map((c) => c.branchGuid);
+
+    // Разбиваем товары на чанки по 100
+    const chunkSize = 100;
+    let ozonStockData = [];
+    let ozonPriceData = [];
+    let websiteProductsData = [];
+
+    for (let i = 0; i < mergedProducts.length; i += chunkSize) {
+      const chunk = mergedProducts.slice(i, i + chunkSize);
+      const productArticles = chunk.map((p) => p.offer_id);
+
+      // Получаем данные с сайта пачкой
+      const data = await fetchWebsiteProductsData({
+        productArticles,
+        branchGuids,
+      });
+      websiteProductsData.push(...data);
+
+      // Для каждого branchGuid и каждого товара формируем ozonStockData
+      for (const city of cityConfigs) {
+        // Фильтруем продукты, если не нужно учитывать is_kgt
+        const productsForCity = city.useKgt
+          ? chunk
+          : chunk.filter((product) => !product.is_kgt);
+
+        for (const product of productsForCity) {
+          const siteProduct = data.find(
+            (d) => d.vendor_code === product.offer_id
+          );
+          const stockObj = siteProduct?.stocks?.find(
+            (s) => s.branch_guid === city.branchGuid
+          );
+          ozonStockData.push({
+            offer_id: product.offer_id,
+            product_id: product.product_id,
+            quant_size: 1,
+            stock:
+              stockObj && stockObj.stock <= 2
+                ? 0
+                : stockObj
+                ? stockObj.stock
+                : 0,
+            warehouse_id: city.warehouse_id(product),
+          });
+        }
+      }
+      ozonPriceData.push(
+        ...chunk.map((item) => {
+          const siteProduct = data.find((d) => d.vendor_code === item.offer_id);
+          return {
+            auto_action_enabled: "DISABLED",
+            currency_code: "KZT",
+            offer_id: item.offer_id,
+            price: siteProduct ? siteProduct.price?.toString() || "0" : "0",
+            old_price: siteProduct
+              ? siteProduct.price &&
+                siteProduct.old_price &&
+                siteProduct.old_price <= siteProduct.price
+                ? "0"
+                : (siteProduct.price < 49000 &&
+                    Math.abs(siteProduct.price - siteProduct.old_price) /
+                      siteProduct.price >
+                      0.05) ||
+                  (siteProduct.price >= 49000 &&
+                    Math.abs(siteProduct.price - siteProduct.old_price) > 3000)
+                ? siteProduct.old_price?.toString() || "0"
+                : "0"
+              : "0",
+            price_strategy_enabled: "DISABLED",
+            product_id: item.product_id,
+            quant_size: 1,
+            vat: "0",
+          };
         })
-      )
-    );
+      );
+    }
 
-    const ozonPriceData = mergedProducts.map((item) => ({
-      auto_action_enabled: "DISABLED",
-      currency_code: "KZT",
-      offer_id: item.offer_id,
-      price: item.websiteData ? item.websiteData.price?.toString() || "0" : "0",
-      old_price: item.websiteData
-      ? item.websiteData.price &&
-        item.websiteData.oldPrice &&
-        item.websiteData.oldPrice <= item.websiteData.price
-        ? "0"
-        : (
-        (item.websiteData.price < 49000 &&
-          Math.abs(item.websiteData.price - item.websiteData.oldPrice) /
-          item.websiteData.price > 0.05) ||
-        (item.websiteData.price >= 49000 &&
-          Math.abs(item.websiteData.price - item.websiteData.oldPrice) >
-          3000)
-        )
-        ? item.websiteData.oldPrice?.toString() || "0"
-        : "0"
-      : "0",
-      price_strategy_enabled: "DISABLED",
-      product_id: item.product_id,
-      quant_size: 1,
-      vat: "0",
-    }));
-
-    const ozonStockData = mergedProducts.map((item) => ({
-      offer_id: item.offer_id,
-      product_id: item.product_id,
-      quant_size: 1,
-      stock: item.websiteData ? item.websiteData.stock || 0 : 0,
-      warehouse_id: item.is_kgt ? 1020005000166135 : 1020005000165063,
-    }));
-
+    // Формируем ozonPriceData только по первому branchGuid (или адаптируйте под ваши задачи)
+    // const ozonPriceData = mergedProducts.map((item) => {
+    //   const siteProduct = data.find((d) => d.vendor_code === item.offer_id);
+    //   return {
+    //     auto_action_enabled: "DISABLED",
+    //     currency_code: "KZT",
+    //     offer_id: item.offer_id,
+    //     price: siteProduct ? siteProduct.price?.toString() || "0" : "0",
+    //     old_price: siteProduct
+    //       ? siteProduct.price &&
+    //         siteProduct.old_price &&
+    //         siteProduct.old_price <= siteProduct.price
+    //         ? "0"
+    //         : (siteProduct.price < 49000 &&
+    //             Math.abs(siteProduct.price - siteProduct.old_price) /
+    //               siteProduct.price >
+    //               0.05) ||
+    //           (siteProduct.price >= 49000 &&
+    //             Math.abs(siteProduct.price - siteProduct.old_price) > 3000)
+    //         ? siteProduct.old_price?.toString() || "0"
+    //         : "0"
+    //       : "0",
+    //     price_strategy_enabled: "DISABLED",
+    //     product_id: item.product_id,
+    //     quant_size: 1,
+    //     vat: "0",
+    //   };
+    // });
+    // console.log("ozonPriceData length:", ozonPriceData);
+    // return {
+    //   status: 200,
+    //   responseCosts: ozonPriceData,
+    //   responseStocks: ozonStockData,
+    // };
     let responseCosts = null;
     let responseStocks = null;
     try {

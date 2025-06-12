@@ -6,7 +6,7 @@ const {
   replaceOne,
   insertManyData,
   updateOne,
-} = require("../../database/mongoDB/mongoQuerie");
+} = require("../../database/mongo/mongoQuerie");
 const moment = require("moment");
 const { getAllProduct, updateCostsProduct } = require("../ozonMarket/ozonMarketApi");
 

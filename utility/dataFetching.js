@@ -21,11 +21,15 @@ async function dataFetching(url, customURL, configURL) {
           "Accept-Encoding": "*",
         },
       };
+      if (configURL && Object.keys(configURL).length > 0) {
+        config = { ...config, ...configURL };
+      }
       backendUrl += url + '?locale=ru&channel=web';
     } else {
       backendUrl = url;
       config = configURL;
     }
+    
     let data;
     await axios(`${backendUrl}`, config)
       .then(async (result) => {
