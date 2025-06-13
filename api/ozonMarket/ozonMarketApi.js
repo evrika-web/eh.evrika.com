@@ -180,70 +180,6 @@ async function updateStocksProduct({ data }) {
   }
 }
 
-async function getDataFromWebsite({ vendorCode, city, branchGuid }) {
-  const maxRetries = 5;
-  let attempt = 0;
-  let delay = 1500; // Start with 1 second
-
-  while (attempt < maxRetries) {
-    try {
-      const response = await dataFetching(
-        `/products/available/city/${city}/vendorcode/${vendorCode}`,
-        false
-      );
-      if (response.status === 200) {
-        var stock = response.data.branches
-          .filter((branch) => branch.guid === branchGuid)
-          .reduce(
-            (acc, branch) =>
-              acc + ((branch.quality && branch.quality["Новый"]) || 0),
-            0
-          );
-
-        const data = {
-          stock: stock,
-          price: response.data.cost,
-          oldPrice: response.data.old_cost,
-        };
-        return data;
-      } else if (response.status === 429) {
-        attempt++;
-        console.warn(
-          `Attempt ${attempt} - Received 429 Too Many Requests. Retrying after ${delay}ms...`
-        );
-        await new Promise((res) => setTimeout(res, delay));
-        delay *= 2; // Exponential backoff
-      } else {
-        throw new Error("Failed to fetch data from website");
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 429) {
-        attempt++;
-        console.warn(
-          `Attempt ${attempt} - Received 429 Too Many Requests. Retrying after ${delay}ms...`
-        );
-        await new Promise((res) => setTimeout(res, delay));
-        delay *= 2; // Exponential backoff
-      } else if (error.response && error.response.status === 404) {
-        console.error(
-          `Error 404 - Resource not found for vendorCode: ${vendorCode}, city: ${city}, branchGuid: ${branchGuid}`
-        );
-        throw new Error("Resource not found (404)");
-      } else {
-        attempt++;
-        console.error(
-          `Attempt ${attempt} - Error fetching data from website:`,
-          error.message
-        );
-        if (attempt >= maxRetries) {
-          throw error;
-        }
-      }
-    }
-  }
-  throw new Error("Max retries reached for getDataFromWebsite");
-}
-
 async function fetchWebsiteProductsData({ productArticles, branchGuids }) {
   try {
     const response = await dataFetching("/exchange/ozon/products-data", false, {
@@ -265,10 +201,60 @@ async function fetchWebsiteProductsData({ productArticles, branchGuids }) {
   }
 }
 
-async function updateStockCostOzon() {
-  const pLimit = (await import("p-limit")).default;
+/**
+ * Формирует объект цены для Ozon
+ */
+function buildOzonPrice(item, siteProduct) {
+  const price = siteProduct?.price ?? 0;
+  const oldPrice = siteProduct?.old_price ?? 0;
+  let calcOldPrice = "0";
+  if (siteProduct) {
+    if (
+      price &&
+      oldPrice &&
+      oldPrice > price &&
+      (
+        (price < 49000 && Math.abs(price - oldPrice) / price > 0.05) ||
+        (price >= 49000 && Math.abs(price - oldPrice) > 3000)
+      )
+    ) {
+      calcOldPrice = oldPrice.toString();
+    }
+  }
+  return {
+    auto_action_enabled: "DISABLED",
+    currency_code: "KZT",
+    offer_id: item.offer_id,
+    price: price.toString(),
+    old_price: calcOldPrice,
+    price_strategy_enabled: "DISABLED",
+    product_id: item.product_id,
+    quant_size: 1,
+    vat: "0",
+  };
+}
 
-  // Конфигурация городов: branchGuid, warehouse_id, условие для is_kgt (если нужно)
+/**
+ * Формирует объект stock для Ozon
+ */
+function buildOzonStock(product, stockObj, warehouse_id) {
+  let stock = 0;
+  if (stockObj) {
+    if (stockObj.stock <= 2) stock = 0;
+    else if (stockObj.stock >= 50) stock = 50;
+    else stock = stockObj.stock;
+  }
+  return {
+    offer_id: product.offer_id,
+    product_id: product.product_id,
+    quant_size: 1,
+    stock,
+    warehouse_id,
+  };
+}
+
+async function updateStockCostOzon() {
+  // Конфигурация городов
   const cityConfigs = [
     {
       name: "Алматы РЦ",
@@ -292,21 +278,17 @@ async function updateStockCostOzon() {
     const allProductsInfo = await getAllProductsInfo({ offer_id: offerIds });
 
     // Объединяем данные о продуктах
-    const mergedProducts = allProducts.map((product) => {
-      const productInfo = allProductsInfo.find(
-        (info) => info.offer_id === product.offer_id
-      );
-      return { ...product, ...productInfo };
-    });
+    const mergedProducts = allProducts.map((product) => ({
+      ...product,
+      ...(allProductsInfo.find((info) => info.offer_id === product.offer_id) ||
+        {}),
+    }));
 
-    // Получаем список branchGuid для запроса
     const branchGuids = cityConfigs.map((c) => c.branchGuid);
-
-    // Разбиваем товары на чанки по 100
     const chunkSize = 100;
-    let ozonStockData = [];
-    let ozonPriceData = [];
-    let websiteProductsData = [];
+    const ozonStockData = [];
+    const ozonPriceData = [];
+    const websiteProductsData = [];
 
     for (let i = 0; i < mergedProducts.length; i += chunkSize) {
       const chunk = mergedProducts.slice(i, i + chunkSize);
@@ -319,101 +301,32 @@ async function updateStockCostOzon() {
       });
       websiteProductsData.push(...data);
 
-      // Для каждого branchGuid и каждого товара формируем ozonStockData
-      for (const city of cityConfigs) {
-        // Фильтруем продукты, если не нужно учитывать is_kgt
+      // STOCKS
+      cityConfigs.forEach((city) => {
         const productsForCity = city.useKgt
           ? chunk
           : chunk.filter((product) => !product.is_kgt);
 
-        for (const product of productsForCity) {
+        productsForCity.forEach((product) => {
           const siteProduct = data.find(
             (d) => d.vendor_code === product.offer_id
           );
           const stockObj = siteProduct?.stocks?.find(
             (s) => s.branch_guid === city.branchGuid
           );
-            ozonStockData.push({
-            offer_id: product.offer_id,
-            product_id: product.product_id,
-            quant_size: 1,
-            stock:
-              stockObj && stockObj.stock <= 2
-              ? 0
-              : stockObj && stockObj.stock >= 50
-              ? 50
-              : stockObj
-              ? stockObj.stock
-              : 0,
-            warehouse_id: city.warehouse_id(product),
-            });
-        }
-      }
-      ozonPriceData.push(
-        ...chunk.map((item) => {
-          const siteProduct = data.find((d) => d.vendor_code === item.offer_id);
-          return {
-            auto_action_enabled: "DISABLED",
-            currency_code: "KZT",
-            offer_id: item.offer_id,
-            price: siteProduct ? siteProduct.price?.toString() || "0" : "0",
-            old_price: siteProduct
-              ? siteProduct.price &&
-                siteProduct.old_price &&
-                siteProduct.old_price <= siteProduct.price
-                ? "0"
-                : (siteProduct.price < 49000 &&
-                    Math.abs(siteProduct.price - siteProduct.old_price) /
-                      siteProduct.price >
-                      0.05) ||
-                  (siteProduct.price >= 49000 &&
-                    Math.abs(siteProduct.price - siteProduct.old_price) > 3000)
-                ? siteProduct.old_price?.toString() || "0"
-                : "0"
-              : "0",
-            price_strategy_enabled: "DISABLED",
-            product_id: item.product_id,
-            quant_size: 1,
-            vat: "0",
-          };
-        })
-      );
+          ozonStockData.push(
+            buildOzonStock(product, stockObj, city.warehouse_id(product))
+          );
+        });
+      });
+
+      // PRICES (только по данным сайта, не по городам)
+      chunk.forEach((item) => {
+        const siteProduct = data.find((d) => d.vendor_code === item.offer_id);
+        ozonPriceData.push(buildOzonPrice(item, siteProduct));
+      });
     }
 
-    // Формируем ozonPriceData только по первому branchGuid (или адаптируйте под ваши задачи)
-    // const ozonPriceData = mergedProducts.map((item) => {
-    //   const siteProduct = data.find((d) => d.vendor_code === item.offer_id);
-    //   return {
-    //     auto_action_enabled: "DISABLED",
-    //     currency_code: "KZT",
-    //     offer_id: item.offer_id,
-    //     price: siteProduct ? siteProduct.price?.toString() || "0" : "0",
-    //     old_price: siteProduct
-    //       ? siteProduct.price &&
-    //         siteProduct.old_price &&
-    //         siteProduct.old_price <= siteProduct.price
-    //         ? "0"
-    //         : (siteProduct.price < 49000 &&
-    //             Math.abs(siteProduct.price - siteProduct.old_price) /
-    //               siteProduct.price >
-    //               0.05) ||
-    //           (siteProduct.price >= 49000 &&
-    //             Math.abs(siteProduct.price - siteProduct.old_price) > 3000)
-    //         ? siteProduct.old_price?.toString() || "0"
-    //         : "0"
-    //       : "0",
-    //     price_strategy_enabled: "DISABLED",
-    //     product_id: item.product_id,
-    //     quant_size: 1,
-    //     vat: "0",
-    //   };
-    // });
-    // console.log("ozonPriceData length:", ozonPriceData);
-    // return {
-    //   status: 200,
-    //   responseCosts: ozonPriceData,
-    //   responseStocks: ozonStockData,
-    // };
     let responseCosts = null;
     let responseStocks = null;
     try {
@@ -432,8 +345,8 @@ async function updateStockCostOzon() {
     }
     return {
       status: 200,
-      responseCosts: responseCosts,
-      responseStocks: responseStocks,
+      responseCosts,
+      responseStocks,
     };
   } catch (error) {
     console.error("Error in updateStockCostOzon:", error.message);
