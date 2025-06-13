@@ -333,18 +333,20 @@ async function updateStockCostOzon() {
           const stockObj = siteProduct?.stocks?.find(
             (s) => s.branch_guid === city.branchGuid
           );
-          ozonStockData.push({
+            ozonStockData.push({
             offer_id: product.offer_id,
             product_id: product.product_id,
             quant_size: 1,
             stock:
               stockObj && stockObj.stock <= 2
-                ? 0
-                : stockObj
-                ? stockObj.stock
-                : 0,
+              ? 0
+              : stockObj && stockObj.stock >= 50
+              ? 50
+              : stockObj
+              ? stockObj.stock
+              : 0,
             warehouse_id: city.warehouse_id(product),
-          });
+            });
         }
       }
       ozonPriceData.push(
