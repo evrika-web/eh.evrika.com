@@ -4,7 +4,7 @@ const moment = require("moment");
 require("dotenv").config();
 const SimpleNodeLogger = require("simple-node-logger");
 const { ObjectId } = require("mongodb");
-const { uploadFile, downloadFile } = require("../database/mongoDB/mongoQuerie");
+const { uploadFile, downloadFile } = require("../database/mongo/mongoQuerie");
 const { authenticateToken } = require("../utility/authorization");
 
 opts = {

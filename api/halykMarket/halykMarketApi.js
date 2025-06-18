@@ -5,7 +5,7 @@ const {
   replaceOne,
   insertManyData,
   updateOne,
-} = require("../../database/mongoDB/mongoQuerie");
+} = require("../../database/mongo/mongoQuerie");
 
 //add logger
 const SimpleNodeLogger = require("simple-node-logger");

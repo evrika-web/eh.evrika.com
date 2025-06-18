@@ -27,6 +27,7 @@ const serverLog = getAppLog("Express");
 const mongoLog = getAppLog("MongoDB");
 const jwt = require('jsonwebtoken');
 
+
 const mongoose = require('mongoose');
 mongoose.connect(dbFullUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -34,7 +35,7 @@ mongoose.connect(dbFullUrl, { useNewUrlParser: true, useUnifiedTopology: true })
 const SimpleNodeLogger = require("simple-node-logger");
 const {
   connectDb
-} = require("./database/mongoDB/mongoQuerie");
+} = require("./database/mongo/mongoQuerie");
 const dbQuerie = require("./database/mySQL/dbQuerie");
 const { updateStockCostOzon } = require("./api/ozonMarket/ozonMarketApi");
 opts = {
@@ -42,6 +43,9 @@ opts = {
   timestampFormat: "DD-MM-YYYY HH:mm:ss.SSS",
 };
 const log = SimpleNodeLogger.createSimpleLogger(opts);
+
+const path = require("path");
+const fs = require("fs");
 
 (async () => {
   const AdminJS = (await import('adminjs')).default;
@@ -53,12 +57,23 @@ const log = SimpleNodeLogger.createSimpleLogger(opts);
     Database: AdminJSMongoose.Database,
   });
 
-  const City = mongoose.model('cities', new mongoose.Schema({}, { strict: false }));
-  const Product = mongoose.model('products', new mongoose.Schema({}, { strict: false }));
-  const Branch = mongoose.model('branches', new mongoose.Schema({}, { strict: false }));
+  const modelsPath = path.join(__dirname, './database/mongo/models');
+  fs.readdirSync(modelsPath).forEach(file => {
+    if (file.endsWith('.js')) {
+      require(path.join(modelsPath, file));
+    }
+  });
+
+  // Собрать все модели из mongoose.models
+  const adminResources = Object.values(mongoose.models).map(model => {
+    return {
+      resource: model,
+      options: {},
+    };
+  });
 
   const adminJs = new AdminJS({
-    resources: [City, Product, Branch],
+    resources: adminResources,
     rootPath: '/admin',
     branding: {
       companyName: 'Evrika Admin',
@@ -108,7 +123,10 @@ app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   // Здесь должна быть проверка по базе данных или другому источнику данных
-  if (username === process.env.AUTH_LOGIN | 'admin' && password === process.env.AUTH_PASSWORD | 'x1z-uuyoT$lul2N*') {
+  if (
+    (username === process.env.AUTH_LOGIN || username === 'admin') &&
+    (password === process.env.AUTH_PASSWORD || password === 'x1z-uuyoT$lul2N*')
+  ) {
     const user = { username };
     const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ accessToken });
