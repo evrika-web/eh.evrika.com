@@ -240,7 +240,7 @@ function buildOzonPrice(item, siteProduct) {
 function buildOzonStock(product, stockObj, warehouse_id) {
   let stock = 0;
   if (stockObj) {
-    if (stockObj.stock <= 2) stock = 0;
+    if (stockObj.stock <= 4) stock = 0;
     else if (stockObj.stock >= 50) stock = 50;
     else stock = stockObj.stock;
   }
