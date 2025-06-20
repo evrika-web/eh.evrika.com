@@ -7,13 +7,11 @@ const {
   updateData,
   updateCategories,
   updateCities,
-  updateBranches,
   updateCosts,
   updateStocks,
 } = require("../api/catalog/catalogApi");
 const { updateDataFromXML } = require("../api/halykMarket/halykmarketApi");
 const { updateDataFromXMLKaspi } = require("../api/kaspiMarket/kaspiMarketApi");
-const { updateStockCostOzon } = require("../api/ozonMarket/ozonMarketApi");
 
 opts = {
   logFilePath: `logs/${moment().format("DD-MM-YYYY")}-schedule-catalog.log`,
@@ -156,22 +154,5 @@ schedule.scheduleJob('*/30 * * * *', async () => {
     });
   } else {
     log.error("Daily update stocks data error: ", catalogUpdate.error);
-  }
-});
-
-// //Обновление данных в Ozon по товарам
-schedule.scheduleJob('0 * * * *', async () => {
-  const start = new Date().getTime();
-  log.info(moment().format("HH:mm DD-MM-YYYY "), "Half-hourly update Ozon");
-  let catalogUpdate = await updateStockCostOzon();
-  if (catalogUpdate.status === 200) {
-    const end = new Date().getTime();
-    log.info("Half-hourly  update Ozon log ", {
-      created: catalogUpdate.created,
-      updated: catalogUpdate.updated,
-      time: `Execution time: ${end - start}ms`,
-    });
-  } else {
-    log.error("Daily update Ozon error: ", catalogUpdate.error);
   }
 });
