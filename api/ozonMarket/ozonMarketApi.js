@@ -238,10 +238,12 @@ function buildOzonPrice(item, siteProduct) {
  * Формирует объект stock для Ozon
  */
 function buildOzonStock(product, stockObj, warehouse_id) {
+  const minimumStock = process.env.OZON_MINIMUM_STOCK || 2;
+  const maximumStock = process.env.OZON_MAXIMUM_STOCK || 50;
   let stock = 0;
   if (stockObj) {
-    if (stockObj.stock <= 4) stock = 0;
-    else if (stockObj.stock >= 50) stock = 50;
+    if (stockObj.stock <= minimumStock) stock = 0;
+    else if (stockObj.stock >= maximumStock) stock = 50;
     else stock = stockObj.stock;
   }
   return {
@@ -357,9 +359,27 @@ async function updateStockCostOzon() {
   }
 }
 
+async function deactivateOzonSaleProducts() {
+  try {    
+    configURL.method = "GET";
+    const response = await axios.get(
+      ozonURL + "/v1/actions",
+      configURL
+    );
+    
+    return response.data.result;
+  } catch (error) {
+    console.error("Error deactivating Ozon sale products:", error.message);
+    return {
+      status: 500,
+      error: error.message,
+    };
+  }
+}
 module.exports = {
   getAllProduct,
   updateCostsProduct,
   updateStocksProduct,
   updateStockCostOzon,
+  deactivateOzonSaleProducts,
 };
